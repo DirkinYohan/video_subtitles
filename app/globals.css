@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de diseño — fuente única de color.
+ * Ningún componente debe usar colores literales: se usan estas variables
+ * (expuestas como utilidades Tailwind `bg-*`, `text-*`, `border-*`).
+ */
+@theme {
+  --color-ink: #182034;
+  --color-paper: #f6f8fc;
+  --color-line: #e3e8f2;
+  --color-line-strong: #ccd5e5;
+  --color-muted: #697386;
+  --color-accent: #4f6bed;
+  --color-accent-strong: #3c54cf;
+  --color-accent-soft: #edf1ff;
+  --color-accent-softer: #dfe6ff;
+  --color-violet: #7768d8;
+  --color-violet-soft: #f0eeff;
+  --color-ok: #147a50;
+  --color-ok-soft: #e8f7ef;
+  --color-warn: #8a6210;
+  --color-warn-soft: #fff7df;
+  --color-danger: #a33a4a;
+  --color-danger-soft: #fff0f2;
+  --color-danger-softer: #ffe3e7;
+  --color-stage: #111827;
+  --color-skeleton: #e9edf5;
+  --color-selection: #dce4ff;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-paper);
+  color-scheme: light;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 5% 0%, rgb(237 241 255 / 70%), transparent 26rem),
+    var(--color-paper);
+  color: var(--color-ink);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+button:active:not(:disabled),
+a:active {
+  transform: translateY(1px);
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+::selection {
+  background: var(--color-selection);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 3px solid rgb(79 107 237 / 28%);
+  outline-offset: 2px;
+}
+
+/* El scroll de fondo se bloquea mientras hay un diálogo abierto. */
+body[data-scroll-locked="true"] {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
