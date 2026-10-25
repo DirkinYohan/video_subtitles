@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Capturas de verificacion visual (generadas por tools/screenshots.py)
+data/screenshots/

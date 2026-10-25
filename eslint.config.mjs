@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Herramientas de agentes: bundles de terceros, no código del producto.
+    ".agents/**",
+    // Utilidades de desarrollo (capturas de pantalla, etc.).
+    "tools/**",
   ]),
 ]);
 
