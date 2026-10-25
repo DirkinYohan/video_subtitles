@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/icons";
+import { IconButton } from "@/components/ui";
 import { formatClock, rulerTicks } from "@/lib/cues";
 import type { Cue } from "@/types/domain";
 
@@ -69,46 +71,51 @@ export function Timeline({
     onSeek(Math.min(span, Math.max(0, timeMs + deltaMs)));
   }
 
+  const zoomIndex = ZOOM_LEVELS.indexOf(zoom as 1);
+
   return (
-    <section className="mt-4 rounded-2xl border border-line bg-white" aria-label={labels.title}>
-      <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">{labels.title}</p>
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-paper hover:text-ink disabled:opacity-40"
-            aria-label={labels.zoomOut}
-            disabled={zoom === ZOOM_LEVELS[0]}
-            onClick={() => setZoom((value) => ZOOM_LEVELS[Math.max(0, ZOOM_LEVELS.indexOf(value as 1) - 1)] ?? 1)}
+    <section className="rounded-xl border border-line bg-surface" aria-label={labels.title}>
+      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+        <p className="text-sm font-semibold text-ink">{labels.title}</p>
+
+        <div className="ml-auto flex items-center gap-0.5">
+          <IconButton
+            label={labels.zoomOut}
+            className="!h-7 !w-7"
+            disabled={zoomIndex <= 0}
+            onClick={() => setZoom(ZOOM_LEVELS[Math.max(0, zoomIndex - 1)] ?? 1)}
           >
-            −
-          </button>
-          <span className="min-w-9 text-center text-xs font-semibold tabular-nums text-muted">{zoom}×</span>
-          <button
-            type="button"
-            className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-paper hover:text-ink disabled:opacity-40"
-            aria-label={labels.zoomIn}
-            disabled={zoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
-            onClick={() => setZoom((value) => ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, ZOOM_LEVELS.indexOf(value as 1) + 1)] ?? 1)}
+            <Icon name="minus" className="h-3.5 w-3.5" />
+          </IconButton>
+          <span className="tabular min-w-8 text-center text-xs font-medium text-muted">
+            {zoom}×
+          </span>
+          <IconButton
+            label={labels.zoomIn}
+            className="!h-7 !w-7"
+            disabled={zoomIndex >= ZOOM_LEVELS.length - 1}
+            onClick={() => setZoom(ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, zoomIndex + 1)] ?? 1)}
           >
-            +
-          </button>
+            <Icon name="plus" className="h-3.5 w-3.5" />
+          </IconButton>
         </div>
       </div>
+
       <div className="overflow-x-auto p-3">
         <div style={{ width: `${zoom * 100}%`, minWidth: "100%" }}>
           {/* Regla temporal */}
-          <div className="relative mb-1 h-5 select-none">
+          <div className="relative mb-1.5 h-4 select-none">
             {ticks.map((tick) => (
               <span
                 key={tick}
-                className="absolute top-0 -translate-x-1/2 text-[10px] tabular-nums text-muted"
+                className="tabular absolute top-0 -translate-x-1/2 text-[0.625rem] font-medium text-subtle"
                 style={{ left: widthPct(tick) }}
               >
                 {formatClock(tick)}
               </span>
             ))}
           </div>
+
           {/* Pista */}
           <div
             ref={trackRef}
@@ -119,35 +126,51 @@ export function Timeline({
             aria-valuemax={span}
             aria-valuenow={Math.round(timeMs)}
             aria-valuetext={formatClock(timeMs)}
-            className={`relative h-24 cursor-pointer rounded-xl border border-line bg-paper/60 ${scrubbing ? "select-none" : ""}`}
+            className={`relative h-[4.5rem] cursor-pointer overflow-hidden rounded-lg bg-surface-2 ${
+              scrubbing ? "select-none" : ""
+            }`}
             onPointerDown={(event) => {
               event.preventDefault();
               setScrubbing(true);
               onSeek(positionFromEvent(event.clientX));
             }}
             onKeyDown={(event) => {
-              if (event.key === "ArrowRight") { event.preventDefault(); nudge(1000); }
-              if (event.key === "ArrowLeft") { event.preventDefault(); nudge(-1000); }
-              if (event.key === "Home") { event.preventDefault(); onSeek(0); }
-              if (event.key === "End") { event.preventDefault(); onSeek(span); }
+              if (event.key === "ArrowRight") {
+                event.preventDefault();
+                nudge(1000);
+              }
+              if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                nudge(-1000);
+              }
+              if (event.key === "Home") {
+                event.preventDefault();
+                onSeek(0);
+              }
+              if (event.key === "End") {
+                event.preventDefault();
+                onSeek(span);
+              }
             }}
           >
             {ticks.map((tick) => (
               <span
                 key={tick}
                 aria-hidden
-                className="pointer-events-none absolute top-0 h-full w-px bg-line/70"
+                className="pointer-events-none absolute top-0 h-full w-px bg-line"
                 style={{ left: widthPct(tick) }}
               />
             ))}
+
             {/* Zona ya procesada: lo que queda a la derecha aún no tiene subtítulos. */}
             {coveredMs > 0 && coveredMs < span && (
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 bg-ink/[0.04]"
+                className="pointer-events-none absolute inset-y-0 right-0 bg-ink/[0.05]"
                 style={{ left: widthPct(coveredMs) }}
               />
             )}
+
             {cues.map((cue) => {
               const isActive = activeIndex === cue.index;
               const isSelected = selectedIndex === cue.index;
@@ -163,12 +186,12 @@ export function Timeline({
                     onSelect(cue);
                     onSeek(cue.start_ms);
                   }}
-                  className={`absolute top-8 h-9 overflow-hidden rounded-md px-1.5 text-left text-[10px] leading-tight transition ${
+                  className={`absolute top-6 h-8 overflow-hidden rounded px-1.5 text-left text-[0.625rem] leading-tight transition-colors ${
                     isSelected
-                      ? "z-20 bg-violet text-white ring-2 ring-violet/40"
+                      ? "z-20 bg-accent text-on-accent"
                       : isActive
-                        ? "z-10 bg-accent text-white"
-                        : "bg-accent-soft text-accent hover:bg-accent/20"
+                        ? "z-10 bg-accent/80 text-on-accent"
+                        : "bg-accent-soft text-accent-ink hover:bg-accent-softer"
                   }`}
                   style={{ left: widthPct(cue.start_ms), width: `${width}%` }}
                 >
@@ -176,18 +199,19 @@ export function Timeline({
                 </button>
               );
             })}
+
             {/* Playhead */}
             <span
               aria-hidden
-              className="pointer-events-none absolute top-0 z-30 h-full w-0.5 bg-violet"
+              className="pointer-events-none absolute top-0 z-30 h-full w-px bg-ink"
               style={{ left: widthPct(timeMs) }}
             >
-              <span className="absolute -top-1 -left-[3px] h-2 w-2 rounded-full bg-violet" />
+              <span className="absolute -left-[3px] -top-1 h-1.5 w-1.5 rounded-full bg-ink" />
             </span>
           </div>
-          {/* Leyenda de la zona pendiente de procesar. */}
+
           {coveredMs > 0 && coveredMs < span && labels.pending && (
-            <p className="mt-2 text-xs text-muted">{labels.pending}</p>
+            <p className="mt-2 text-xs leading-5 text-muted">{labels.pending}</p>
           )}
           {cues.length === 0 && <p className="mt-3 text-sm text-muted">{labels.empty}</p>}
         </div>

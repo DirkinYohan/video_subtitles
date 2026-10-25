@@ -1,7 +1,8 @@
 "use client";
 
 import { useI18n } from "@/components/I18nProvider";
-import { Button, Progress } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Button, Progress, StatusDot } from "@/components/ui";
 import { formatClock } from "@/lib/cues";
 import { isActive } from "@/lib/status";
 import type { Job } from "@/types/domain";
@@ -43,14 +44,14 @@ export function ProcessPanel({
   const percent = job?.progress ?? 0;
 
   return (
-    <section className="grid gap-3 rounded-2xl border border-line bg-paper/60 p-3.5" aria-label={t("process.title")}>
+    <section className="grid gap-3 rounded-xl border border-line bg-surface p-3.5" aria-label={t("process.title")}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">{t("process.title")}</p>
+        <p className="text-sm font-semibold text-ink">{t("process.title")}</p>
         {active && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
-            <span
-              aria-hidden
-              className={`h-2 w-2 rounded-full ${eventsStatus === "live" ? "bg-ok" : "bg-warn"}`}
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+            <StatusDot
+              tone={eventsStatus === "live" ? "ok" : "warn"}
+              pulse={eventsStatus !== "live"}
             />
             {eventsStatus === "live" ? t("process.live") : t("process.connecting")}
           </span>
@@ -59,53 +60,80 @@ export function ProcessPanel({
 
       {ready && (
         <>
-          <p className="text-sm text-muted">{t("process.readyHint")}</p>
-          <Button type="button" onClick={onProduce}>{t("process.produce")}</Button>
+          <p className="text-sm leading-6 text-muted">{t("process.readyHint")}</p>
+          <Button type="button" onClick={onProduce}>
+            <Icon name="spark" className="h-4 w-4" />
+            {t("process.produce")}
+          </Button>
         </>
       )}
 
       {active && (
         <>
           <Progress value={percent} label={t("process.title")} />
-          <dl className="grid gap-1 text-xs text-muted">
-            <div className="flex justify-between gap-2">
-              <dt>{t("process.processed")}</dt>
-              <dd className="font-semibold tabular-nums text-ink">
+
+          <dl className="grid gap-1.5 text-xs">
+            <div className="flex items-baseline justify-between gap-2">
+              <dt className="text-muted">{t("process.processed")}</dt>
+              <dd className="tabular font-medium text-ink">
                 {formatClock(covered)} / {total > 0 ? formatClock(total) : "--:--"}
               </dd>
             </div>
-            <div className="flex justify-between gap-2">
-              <dt>{t("process.available")}</dt>
-              <dd className="font-semibold tabular-nums text-ink">
-                {covered > 0 ? `${t("process.upTo")} ${formatClock(covered)}` : t("process.noneYet")}
+            <div className="flex items-baseline justify-between gap-2">
+              <dt className="text-muted">{t("process.available")}</dt>
+              <dd className="tabular font-medium text-ink">
+                {covered > 0
+                  ? `${t("process.upTo")} ${formatClock(covered)}`
+                  : t("process.noneYet")}
               </dd>
             </div>
           </dl>
-          <p className="text-xs leading-5 text-muted">{t("process.background")}</p>
-          <Button type="button" variant="secondary" onClick={() => void onCancel()}>{t("job.cancel")}</Button>
+
+          <p className="text-xs leading-5 text-subtle">{t("process.background")}</p>
+
+          <Button type="button" variant="secondary" size="sm" onClick={() => void onCancel()}>
+            {t("job.cancel")}
+          </Button>
         </>
       )}
 
       {finished && (
-        <p role="status" className="text-sm font-medium text-ok">
-          {t("process.completed")} · {job?.stage_history?.length ?? 0} {t("process.stages")}
-        </p>
+        <div className="grid gap-0.5">
+          <p role="status" className="flex items-center gap-2 text-sm font-medium text-ok">
+            <Icon name="check" className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 truncate">{t("process.completed")}</span>
+          </p>
+          <p className="tabular pl-6 text-xs text-subtle">
+            {job?.stage_history?.length ?? 0} {t("process.stages")}
+          </p>
+        </div>
       )}
 
       {failed && (
         <>
-          <p role="alert" className="text-sm text-danger">
-            {status === "CANCELLED" ? t("job.cancelled") : t("process.failed")}
-            {job?.error ? `: ${job.error}` : ""}
+          <p role="alert" className="flex items-start gap-2 text-sm leading-6 text-danger">
+            <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0">
+              {status === "CANCELLED" ? t("job.cancelled") : t("process.failed")}
+              {job?.error ? `: ${job.error}` : ""}
+            </span>
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={() => void onRetry()}>{t("job.retry")}</Button>
-            <Button type="button" variant="ghost" onClick={onRefresh}>{t("job.refresh")}</Button>
+            <Button type="button" size="sm" onClick={() => void onRetry()}>
+              {t("job.retry")}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={onRefresh}>
+              {t("job.refresh")}
+            </Button>
           </div>
         </>
       )}
 
-      {eventsError && <p role="alert" className="text-xs text-warn">{eventsError}</p>}
+      {eventsError && (
+        <p role="alert" className="text-xs leading-5 text-warn">
+          {eventsError}
+        </p>
+      )}
     </section>
   );
 }

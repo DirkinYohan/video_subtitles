@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
-import { Button } from "@/components/ui";
+import { Button, Progress, buttonClass } from "@/components/ui";
 import { formatClock } from "@/lib/cues";
 import { languageLabel } from "@/lib/i18n";
 import { LANGS, flag } from "@/lib/languages";
@@ -44,7 +44,9 @@ export function CreateStudio() {
   }
 
   function toggle(lang: string) {
-    setTargets((current) => (current.includes(lang) ? current.filter((item) => item !== lang) : [...current, lang]));
+    setTargets((current) =>
+      current.includes(lang) ? current.filter((item) => item !== lang) : [...current, lang],
+    );
   }
 
   async function start() {
@@ -59,12 +61,18 @@ export function CreateStudio() {
     started.current = Date.now();
     setPhase("uploading");
     try {
-      const data = await uploadVideo(file, source, chosen, (done, all) => {
-        setLoaded(done);
-        setTotal(all);
-        const seconds = (Date.now() - started.current) / 1000;
-        setSpeed(seconds > 0 ? done / seconds : 0);
-      }, abortRef.current);
+      const data = await uploadVideo(
+        file,
+        source,
+        chosen,
+        (done, all) => {
+          setLoaded(done);
+          setTotal(all);
+          const seconds = (Date.now() - started.current) / 1000;
+          setSpeed(seconds > 0 ? done / seconds : 0);
+        },
+        abortRef.current,
+      );
       router.push(`/projects/${data.id}`);
     } catch (caught) {
       if (caught instanceof Error && caught.message === "abort") {
@@ -77,21 +85,36 @@ export function CreateStudio() {
   }
 
   const options = source === "und" ? LANGS : LANGS.filter((lang) => lang !== source);
+  const chosen = targets.filter((lang) => lang !== source);
+  const canStart = Boolean(file) && phase === "idle" && chosen.length > 0;
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-6">
-      <div className="flex items-center gap-3">
-        <Link href="/projects" className="grid h-10 w-10 place-items-center rounded-xl bg-white text-lg text-muted ring-1 ring-line hover:text-ink" aria-label={t("studio.back")}>←</Link>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">{t("studio.back")}</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">{t("upload.title")}</h1>
-        </div>
+    <div className="mx-auto grid max-w-7xl gap-5">
+      <div className="flex items-center gap-2.5">
+        <Link
+          href="/projects"
+          aria-label={t("studio.back")}
+          className={`${buttonClass("secondary")} !h-9 !w-9 !px-0`}
+        >
+          <Icon name="skipBack" className="h-4 w-4" />
+        </Link>
+        <h1 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+          {t("upload.title")}
+        </h1>
       </div>
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
-        <aside className="grid min-w-0 gap-5 rounded-3xl border border-line bg-white p-4 sm:p-5 lg:sticky lg:top-28">
+
+      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
+        <aside className="grid min-w-0 gap-4 rounded-xl border border-line bg-surface p-3.5 lg:sticky lg:top-20">
           <label
-            className={`grid cursor-pointer place-items-center gap-2 rounded-2xl border border-dashed px-4 py-9 text-center transition ${over ? "scale-[1.01] border-accent bg-accent-soft" : "border-[#ccd5e5] bg-paper hover:border-accent hover:bg-accent-soft/50"}`}
-            onDragOver={(event) => { event.preventDefault(); setOver(true); }}
+            className={`grid cursor-pointer place-items-center gap-1.5 rounded-lg border border-dashed px-4 py-7 text-center transition-colors ${
+              over
+                ? "border-accent bg-accent-soft"
+                : "border-line-strong bg-surface-2 hover:border-accent hover:bg-accent-soft/60"
+            }`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setOver(true);
+            }}
             onDragLeave={() => setOver(false)}
             onDrop={(event) => {
               event.preventDefault();
@@ -99,69 +122,148 @@ export function CreateStudio() {
               chooseFile(event.dataTransfer.files[0] ?? null);
             }}
           >
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-accent shadow-sm ring-1 ring-line">
-              <Icon name="upload" className="h-6 w-6" />
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-ink-2">
+              <Icon name="upload" className="h-5 w-5" />
             </span>
-            <span className="mt-1 max-w-full truncate text-sm font-bold">{file ? file.name : t("studio.drop")}</span>
-            <span className="text-xs text-muted">{file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : t("studio.or")}</span>
-            <span className="text-xs text-muted">{t("studio.formats")}</span>
-            <input type="file" accept=".mp4,.mkv,.mov,.wav,.mp3,.m4a,video/*,audio/*" className="sr-only" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} />
+            <span className="mt-1.5 max-w-full truncate text-sm font-medium text-ink">
+              {file ? file.name : t("studio.drop")}
+            </span>
+            <span className="text-xs text-muted">
+              {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : t("studio.or")}
+            </span>
+            <span className="text-[0.6875rem] text-subtle">{t("studio.formats")}</span>
+            <input
+              type="file"
+              accept=".mp4,.mkv,.mov,.wav,.mp3,.m4a,video/*,audio/*"
+              className="sr-only"
+              onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
+            />
           </label>
-          <label className="grid gap-2 text-sm">
-            <span className="font-semibold">{t("studio.source")}</span>
-            <select value={source} className="min-h-11 rounded-xl border border-line bg-white px-3 py-2 outline-none hover:border-[#ced6e5] focus:border-accent focus:ring-4 focus:ring-accent/10" onChange={(event) => setSource(event.target.value)}>
-              <option value="und">{t("studio.auto")}</option>
-              {LANGS.map((lang) => <option key={lang} value={lang}>{flag(lang)} {languageLabel(locale, lang)}</option>)}
-            </select>
+
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-medium text-ink">{t("studio.source")}</span>
+            <span className="relative">
+              <select
+                value={source}
+                onChange={(event) => setSource(event.target.value)}
+                className="min-h-10 w-full cursor-pointer appearance-none rounded-md border border-line bg-surface pl-3 pr-9 text-sm text-ink transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+              >
+                <option value="und">{t("studio.auto")}</option>
+                {LANGS.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {flag(lang)} {languageLabel(locale, lang)}
+                  </option>
+                ))}
+              </select>
+              <Icon
+                name="chevron"
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+              />
+            </span>
           </label>
-          <fieldset>
-            <legend className="mb-3 text-sm font-semibold">{t("studio.targets")}</legend>
-            <div className="mb-3 rounded-2xl bg-paper p-3 text-sm text-muted">
-              <p className="font-medium text-ink">{flag(source)} {source === "und" ? t("studio.auto") : languageLabel(locale, source)}</p>
-              <p className="my-1.5 pl-2 text-xs text-accent">↓</p>
-              <p className="leading-6">{targets.filter((lang) => lang !== source).map((lang) => `${flag(lang)} ${languageLabel(locale, lang)}`).join("  ·  ") || "—"}</p>
+
+          <fieldset className="min-w-0">
+            <legend className="mb-2 text-sm font-medium text-ink">{t("studio.targets")}</legend>
+
+            <div className="mb-2.5 flex items-center gap-1.5 overflow-hidden rounded-md bg-surface-2 px-2.5 py-2 text-xs">
+              <span className="shrink-0 font-medium text-ink">
+                {flag(source)} {source === "und" ? t("studio.auto") : languageLabel(locale, source)}
+              </span>
+              <Icon name="skipForward" className="h-3 w-3 shrink-0 text-subtle" />
+              <span className="truncate text-muted">
+                {chosen.length > 0
+                  ? chosen.map((lang) => languageLabel(locale, lang)).join(", ")
+                  : "—"}
+              </span>
             </div>
-            <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto pr-1 lg:grid-cols-1">
-              {options.map((lang) => (
-                <label key={lang} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm ${targets.includes(lang) ? "border-accent/25 bg-accent-soft text-accent" : "border-transparent bg-paper hover:border-line"}`}>
-                  <input type="checkbox" className="accent-accent" checked={targets.includes(lang)} onChange={() => toggle(lang)} />
-                  {flag(lang)} {languageLabel(locale, lang)}
-                </label>
-              ))}
+
+            <div className="grid max-h-52 grid-cols-2 gap-1 overflow-y-auto pr-1 lg:grid-cols-1">
+              {options.map((lang) => {
+                const checked = targets.includes(lang);
+                return (
+                  <label
+                    key={lang}
+                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                      checked ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-surface-2"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={checked}
+                      onChange={() => toggle(lang)}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors peer-focus-visible:shadow-[var(--focus-ring)] ${
+                        checked
+                          ? "border-accent bg-accent text-on-accent"
+                          : "border-line-strong bg-surface"
+                      }`}
+                    >
+                      {checked && <Icon name="check" className="h-3 w-3" />}
+                    </span>
+                    <span className="truncate">
+                      {flag(lang)} {languageLabel(locale, lang)}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
           </fieldset>
-          {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+
+          {error && (
+            <p role="alert" className="text-sm text-danger">
+              {error}
+            </p>
+          )}
+
           <div className="grid gap-2">
-            <Button type="button" className="w-full" disabled={!file || phase !== "idle" || targets.filter((lang) => lang !== source).length === 0} onClick={() => void start()}>
+            <Button type="button" className="w-full" disabled={!canStart} onClick={() => void start()}>
+              <Icon name="spark" className="h-4 w-4" />
               {phase === "idle" ? t("studio.start") : t("studio.uploading")}
             </Button>
-            {phase === "uploading" && <Button type="button" variant="secondary" onClick={() => abortRef.current.abort()}>{t("studio.cancel")}</Button>}
+            {phase === "uploading" && (
+              <Button type="button" variant="secondary" onClick={() => abortRef.current.abort()}>
+                {t("studio.cancel")}
+              </Button>
+            )}
           </div>
         </aside>
-        <section className="min-w-0 overflow-hidden rounded-3xl border border-line bg-white shadow-[0_16px_45px_rgb(35_48_88/0.06)]">
-          <div className="relative bg-[#e9edf5]">
+
+        <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="relative">
             {preview ? (
-              <video ref={videoRef} src={preview} className="aspect-video w-full bg-ink object-contain" controls />
+              <video
+                ref={videoRef}
+                src={preview}
+                className="aspect-video w-full bg-stage object-contain"
+                controls
+              />
             ) : (
-              <div className="grid aspect-video place-items-center p-6 text-center">
-                <div>
-                  <span className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-white text-accent shadow-sm"><Icon name="play" className="h-7 w-7" /></span>
-                  <p className="mt-4 text-sm font-medium text-muted">{t("studio.emptyPlayer")}</p>
+              <div className="grid aspect-video place-items-center bg-surface-2 p-6 text-center">
+                <div className="grid justify-items-center gap-2">
+                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-subtle">
+                    <Icon name="play" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm text-muted">{t("studio.emptyPlayer")}</p>
                 </div>
               </div>
             )}
           </div>
+
           {phase !== "idle" && (
-            <div className="grid gap-3 border-t border-line px-4 py-4 sm:px-5">
-              <div className="flex items-center justify-between text-sm">
-                <span>{phase === "preparing" ? t("studio.preparing") : t("studio.uploading")}</span>
-                <span>{percent}%</span>
+            <div className="grid gap-2.5 border-t border-line px-4 py-3.5">
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="font-medium text-ink">
+                  {phase === "preparing" ? t("studio.preparing") : t("studio.uploading")}
+                </span>
+                <span className="tabular text-xs text-muted">{percent}%</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-paper" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-                <div className="h-full bg-accent" style={{ width: `${percent}%` }} />
-              </div>
-              <p className="text-xs text-muted">
-                {file?.name} · {(loaded / (1024 * 1024)).toFixed(1)} / {(total / (1024 * 1024)).toFixed(1)} MB
+              <Progress value={percent} label={t("studio.uploading")} />
+              <p className="tabular text-xs text-subtle">
+                {file?.name} · {(loaded / (1024 * 1024)).toFixed(1)} /{" "}
+                {(total / (1024 * 1024)).toFixed(1)} MB
                 {speed > 0 && ` · ${(speed / (1024 * 1024)).toFixed(1)} MB/s`}
                 {speed > 0 && total > loaded && ` · ${formatClock(((total - loaded) / speed) * 1000)}`}
               </p>

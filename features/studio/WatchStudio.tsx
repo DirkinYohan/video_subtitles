@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
-import { buttonClass } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Button, StatusDot, buttonClass } from "@/components/ui";
 import { Editor } from "@/features/editor/Editor";
 import { ProcessPanel } from "@/features/jobs/ProcessPanel";
 import { Player } from "@/features/player/Player";
@@ -209,55 +210,83 @@ export function WatchStudio({
   const editorLanguages = languages.length ? languages : [project.source_language || "es"];
 
   return (
-    <div className="mx-auto grid min-w-0 max-w-7xl gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link href="/projects" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-lg text-muted ring-1 ring-line hover:text-ink" aria-label={t("studio.back")}>←</Link>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">{t("studio.back")}</p>
-            <h1 className="mt-1 truncate text-xl font-bold tracking-tight sm:text-2xl">{project.title}</h1>
-          </div>
+    <div className="mx-auto grid min-w-0 max-w-7xl gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Link
+            href="/projects"
+            aria-label={t("studio.back")}
+            className={`${buttonClass("secondary")} !h-9 !w-9 !px-0`}
+          >
+            <Icon name="arrowLeft" className="h-4 w-4" />
+          </Link>
+          <h1 className="truncate text-lg font-semibold tracking-tight text-ink sm:text-xl">
+            {project.title}
+          </h1>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           {readyToProduce ? (
-            <button
-              type="button"
-              className={buttonClass()}
-              disabled={producing}
-              onClick={() => void produce("progressive")}
-            >
+            <Button type="button" disabled={producing} onClick={() => void produce("progressive")}>
+              <Icon name="spark" className="h-4 w-4" />
               {producing ? t("process.starting") : t("process.produce")}
-            </button>
-          ) : (
-            <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent-soft px-3.5 py-2 text-sm font-semibold text-accent">
-              <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+            </Button>
+          ) : processing ? (
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent-soft px-3 text-sm font-medium text-accent-ink">
+              <StatusDot tone="accent" pulse />
               {t("process.processing")}
             </span>
-          )}
-          <a className={buttonClass("secondary")} href={`/api/export/${project.id}/zip`}>{t("project.export")}</a>
+          ) : null}
+          <a className={buttonClass("secondary")} href={`/api/export/${project.id}/zip`}>
+            <Icon name="download" className="h-4 w-4" />
+            {t("project.export")}
+          </a>
         </div>
       </div>
 
-      {produceError && <p role="alert" className="text-sm text-danger">{produceError}</p>}
+      {produceError && (
+        <p role="alert" className="text-sm text-danger">
+          {produceError}
+        </p>
+      )}
 
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
-        <aside className="grid min-w-0 gap-5 rounded-3xl border border-line bg-white p-4 sm:p-5 lg:sticky lg:top-28">
+      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]">
+        <aside className="order-2 grid min-w-0 gap-4 overflow-hidden rounded-xl border border-line bg-surface p-3.5 lg:order-1 lg:sticky lg:top-20">
           {project.thumbnail_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={project.thumbnail_url} alt="" className="aspect-video w-full rounded-2xl bg-paper object-cover" />
+            <img
+              src={project.thumbnail_url}
+              alt=""
+              className="aspect-video w-full rounded-lg bg-surface-2 object-cover"
+            />
           ) : (
-            <div className="grid aspect-video w-full place-items-center rounded-2xl bg-paper text-xs text-muted">{t("project.noThumbnail")}</div>
-          )}
-          <div className="grid gap-3">
-            <h2 className="truncate text-base font-bold">{project.title}</h2>
-            <div className="rounded-2xl bg-paper p-3">
-              <p className="text-sm font-medium">
-                {flag(sourceLanguage)} {languageLabel(locale, sourceLanguage)}
-                {sourceLanguage === "und" && <span className="ml-2 text-xs text-muted">{t("studio.auto")}</span>}
-              </p>
-              <p className="my-1.5 pl-2 text-xs text-accent" aria-hidden>↓</p>
-              <p className="text-sm leading-6 text-muted">{project.target_languages.map((code) => `${flag(code)} ${languageLabel(locale, code)}`).join(" · ")}</p>
+            <div className="grid aspect-video w-full place-items-center rounded-lg bg-surface-2 text-xs text-muted">
+              {t("project.noThumbnail")}
             </div>
+          )}
+
+          <div className="grid min-w-0 gap-2">
+            <p className="truncate text-sm font-semibold text-ink">{project.title}</p>
+
+            <dl className="grid min-w-0 gap-1.5 rounded-lg bg-surface-2 p-2.5 text-xs">
+              <div className="flex min-w-0 items-baseline justify-between gap-2">
+                <dt className="shrink-0 text-muted">{t("studio.source")}</dt>
+                <dd className="min-w-0 truncate text-right font-medium text-ink">
+                  {flag(sourceLanguage)} {languageLabel(locale, sourceLanguage)}
+                  {sourceLanguage === "und" && (
+                    <span className="ml-1 font-normal text-subtle">({t("studio.auto")})</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex min-w-0 items-baseline justify-between gap-2">
+                <dt className="shrink-0 text-muted">{t("studio.targets")}</dt>
+                <dd className="min-w-0 truncate text-right font-medium text-ink">
+                  {project.target_languages
+                    .map((code) => `${flag(code)} ${languageLabel(locale, code)}`)
+                    .join(" · ")}
+                </dd>
+              </div>
+            </dl>
           </div>
 
           <ProcessPanel
@@ -273,29 +302,31 @@ export function WatchStudio({
           />
         </aside>
 
-        <Player
-          projectId={project.id}
-          cues={cues}
-          tracks={currentTracks}
-          lang={language}
-          onLangChange={setLanguage}
-          durationMs={timelineDuration}
-          timeMs={timeMs}
-          onTimeChange={setTimeMs}
-          onDurationChange={setDurationMs}
-          sourceLanguage={sourceLanguage}
-          targetLanguages={project.target_languages}
-          selectedIndex={selectedIndex}
-          onSelectCue={(cue) => setSelectedIndex(cue.index)}
-          seekRef={seekRef}
-          onVideoElement={setVideoElement}
-          liveEnabled={liveEnabled}
-          onLiveToggle={setLiveEnabled}
-          liveStatus={live.status}
-          liveEvent={live.event}
-          processing={processing}
-          coveredMs={events.coveredMs}
-        />
+        <div className="order-1 min-w-0 lg:order-2">
+          <Player
+            projectId={project.id}
+            cues={cues}
+            tracks={currentTracks}
+            lang={language}
+            onLangChange={setLanguage}
+            durationMs={timelineDuration}
+            timeMs={timeMs}
+            onTimeChange={setTimeMs}
+            onDurationChange={setDurationMs}
+            sourceLanguage={sourceLanguage}
+            targetLanguages={project.target_languages}
+            selectedIndex={selectedIndex}
+            onSelectCue={(cue) => setSelectedIndex(cue.index)}
+            seekRef={seekRef}
+            onVideoElement={setVideoElement}
+            liveEnabled={liveEnabled}
+            onLiveToggle={setLiveEnabled}
+            liveStatus={live.status}
+            liveEvent={live.event}
+            processing={processing}
+            coveredMs={events.coveredMs}
+          />
+        </div>
       </div>
 
       <Timeline
