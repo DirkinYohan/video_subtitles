@@ -114,30 +114,41 @@ export function AccountPanel({ user }: { user: User }) {
   const strength = password.length >= 12 ? t("auth.passwordGood") : password.length >= 8 ? t("auth.passwordFair") : password ? t("auth.passwordWeak") : "";
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-2">
-      <div className="mb-1 lg:col-span-2">
-        <p className="text-sm font-semibold text-accent">{t("app.tagline")}</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{t("account.title")}</h1>
-      </div>
-      {notice && <div className="lg:col-span-2"><Toast>{notice}</Toast></div>}
-      {error && <div className="lg:col-span-2"><Toast tone="danger">{error}</Toast></div>}
-      <section className="grid gap-5 rounded-3xl border border-line bg-white p-5 sm:p-6 lg:col-span-2">
-        <h2 className="text-sm font-bold">{t("account.personal")}</h2>
-        <div className="flex min-w-0 items-center gap-4">
-          <span aria-hidden className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-violet-soft text-xl font-bold text-violet ring-1 ring-violet/10">{initial}</span>
+    <div className="mx-auto grid max-w-4xl gap-4">
+      <h1 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+        {t("account.title")}
+      </h1>
+
+      {notice && <Toast>{notice}</Toast>}
+      {error && <Toast tone="danger">{error}</Toast>}
+
+      {/* --- Perfil --- */}
+      <section className="grid gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5">
+        <h2 className="text-sm font-semibold text-ink">{t("account.personal")}</h2>
+
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-surface-2 text-sm font-semibold text-ink"
+          >
+            {initial}
+          </span>
           <div className="min-w-0 text-sm">
-            <p className="truncate text-base font-bold">{user.name}</p>
+            <p className="truncate font-semibold text-ink">{user.name}</p>
             <p className="truncate text-muted">{user.email}</p>
-            {since && <p className="text-xs text-muted">{t("account.since")}: {since}</p>}
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <Field label={t("account.name")}>
             <TextInput
               value={name}
               maxLength={80}
               autoComplete="name"
-              onChange={(event) => { setName(event.target.value); setError(""); }}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError("");
+              }}
             />
           </Field>
           <Button
@@ -149,51 +160,104 @@ export function AccountPanel({ user }: { user: User }) {
             {pending === "name" ? t("auth.loading") : t("account.saveName")}
           </Button>
         </div>
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div className="min-w-0 rounded-2xl bg-paper p-3.5"><dt className="text-xs font-medium text-muted">{t("account.email")}</dt><dd className="mt-1 truncate font-semibold">{user.email}</dd></div>
-          <div className="rounded-2xl bg-paper p-3.5"><dt className="text-xs font-medium text-muted">{t("account.since")}</dt><dd className="mt-1 font-semibold">{since || "—"}</dd></div>
+
+        <dl className="grid divide-y divide-line border-t border-line text-sm sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          <div className="min-w-0 py-2.5 sm:py-0 sm:pr-4">
+            <dt className="text-xs text-muted">{t("account.email")}</dt>
+            <dd className="mt-0.5 truncate font-medium text-ink">{user.email}</dd>
+          </div>
+          <div className="min-w-0 py-2.5 sm:py-0 sm:pl-4">
+            <dt className="text-xs text-muted">{t("account.since")}</dt>
+            <dd className="mt-0.5 font-medium text-ink">{since || "—"}</dd>
+          </div>
         </dl>
       </section>
-      <section className="grid content-start gap-5 rounded-3xl border border-line bg-white p-5 sm:p-6">
-        <div>
-          <span aria-hidden className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-accent-soft font-bold text-accent">@</span>
-          <h2 className="font-bold">{t("account.changeEmail")}</h2>
-        </div>
-        <Field label={t("account.newEmail")}>
-          <TextInput type="email" value={email} autoComplete="email" onChange={(event) => setEmail(event.target.value)} />
-        </Field>
-        <Field label={t("account.currentPassword")}>
-          <TextInput type="password" value={emailPassword} autoComplete="current-password" onChange={(event) => setEmailPassword(event.target.value)} />
-        </Field>
-        <div className="mt-auto"><Button type="button" className="w-full sm:w-auto" disabled={pending !== null} onClick={() => void changeEmail()}>{pending === "email" ? t("auth.loading") : t("account.changeEmail")}</Button></div>
-      </section>
-      <section className="grid content-start gap-5 rounded-3xl border border-line bg-white p-5 sm:p-6">
-        <div>
-          <span aria-hidden className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-ok-soft font-bold text-ok">••</span>
-          <h2 className="font-bold">{t("account.security")}</h2>
-        </div>
-        <Field label={t("account.currentPassword")}>
-          <TextInput type="password" value={current} autoComplete="current-password" onChange={(event) => setCurrent(event.target.value)} />
-        </Field>
-        <Field label={t("account.newPassword")}>
-          <TextInput type="password" value={password} autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} />
-        </Field>
-        {strength && <p className="rounded-lg bg-paper px-3 py-2 text-xs font-medium text-muted">{strength}</p>}
-        <p className="text-xs leading-5 text-muted">{t("auth.short")}</p>
-        <Field label={t("account.confirmPassword")}>
-          <TextInput type="password" value={confirm} autoComplete="new-password" onChange={(event) => setConfirm(event.target.value)} />
-        </Field>
-        <div className="mt-auto"><Button type="button" className="w-full sm:w-auto" disabled={pending !== null} onClick={() => void changePassword()}>{pending === "password" ? t("auth.loading") : t("account.changePassword")}</Button></div>
-      </section>
-      <section className="grid gap-5 rounded-3xl border border-line bg-white p-5 sm:p-6 lg:col-span-2 lg:grid-cols-2">
-        <h2 className="font-bold lg:col-span-2">{t("account.preferences")}</h2>
-        <div className="rounded-2xl bg-paper p-4">
-          <p className="mb-3 text-sm font-semibold">{t("settings.language")}</p>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* --- Correo --- */}
+        <section className="grid content-start gap-3.5 rounded-xl border border-line bg-surface p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-ink">{t("account.changeEmail")}</h2>
+          <Field label={t("account.newEmail")}>
+            <TextInput
+              type="email"
+              value={email}
+              autoComplete="email"
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </Field>
+          <Field label={t("account.currentPassword")}>
+            <TextInput
+              type="password"
+              value={emailPassword}
+              autoComplete="current-password"
+              onChange={(event) => setEmailPassword(event.target.value)}
+            />
+          </Field>
+          <div className="mt-1">
+            <Button type="button" disabled={pending !== null} onClick={() => void changeEmail()}>
+              {pending === "email" ? t("auth.loading") : t("account.changeEmail")}
+            </Button>
+          </div>
+        </section>
+
+        {/* --- Seguridad --- */}
+        <section className="grid content-start gap-3.5 rounded-xl border border-line bg-surface p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-ink">{t("account.security")}</h2>
+          <Field label={t("account.currentPassword")}>
+            <TextInput
+              type="password"
+              value={current}
+              autoComplete="current-password"
+              onChange={(event) => setCurrent(event.target.value)}
+            />
+          </Field>
+          <Field
+            label={t("account.newPassword")}
+            hint={strength ? `${strength} · ${t("auth.short")}` : t("auth.short")}
+          >
+            <TextInput
+              type="password"
+              value={password}
+              autoComplete="new-password"
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
+          <Field label={t("account.confirmPassword")}>
+            <TextInput
+              type="password"
+              value={confirm}
+              autoComplete="new-password"
+              onChange={(event) => setConfirm(event.target.value)}
+            />
+          </Field>
+          <div className="mt-1">
+            <Button
+              type="button"
+              disabled={pending !== null}
+              onClick={() => void changePassword()}
+            >
+              {pending === "password" ? t("auth.loading") : t("account.changePassword")}
+            </Button>
+          </div>
+        </section>
+      </div>
+
+      {/* --- Preferencias --- */}
+      <section className="grid gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5 lg:grid-cols-2">
+        <h2 className="text-sm font-semibold text-ink lg:col-span-2">
+          {t("account.preferences")}
+        </h2>
+
+        <div className="grid gap-2">
+          <p className="text-sm text-ink-2">{t("settings.language")}</p>
           <LanguageMenu align="left" />
         </div>
-        <label className="grid gap-3 rounded-2xl bg-paper p-4 text-sm">
-          <span className="font-semibold">{t("account.captionSize")}</span>
-          <span className="text-xs text-muted">{t(SIZE_KEYS[size])}</span>
+
+        <label className="grid gap-2.5 text-sm">
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="text-ink-2">{t("account.captionSize")}</span>
+            <span className="text-xs text-subtle">{t(SIZE_KEYS[size])}</span>
+          </span>
           <input
             type="range"
             min={0}
@@ -203,10 +267,15 @@ export function AccountPanel({ user }: { user: User }) {
             aria-label={t("account.captionSize")}
             onChange={(event) => writeCaptionSize(Number(event.target.value) as CaptionSize)}
           />
-          <span className={`${CAPTION_CLASS[size]} text-center font-bold text-ink`}>Aa</span>
+          <span
+            className={`${CAPTION_CLASS[size]} rounded-md bg-stage py-2 text-center text-white`}
+          >
+            Aa
+          </span>
         </label>
       </section>
-      <div className="pt-2 lg:col-span-2">
+
+      <div className="pb-2">
         <Button type="button" variant="secondary" disabled={pending !== null} onClick={() => void logout()}>
           {t("user.logout")}
         </Button>

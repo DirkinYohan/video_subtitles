@@ -72,7 +72,7 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-5 rounded-3xl border border-line bg-white p-5 shadow-[0_20px_60px_rgb(39_52_92/0.08)] sm:p-7" noValidate>
+    <form onSubmit={onSubmit} className="grid gap-4" noValidate>
       {mode === "register" && (
         <Field label={t("auth.name")}>
           <TextInput name="name" autoComplete="name" required />
@@ -95,14 +95,18 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
               onChange={(event) => setPassword(event.target.value)}
               className="pr-24"
             />
-            <button type="button" className="absolute right-2 top-1/2 min-h-8 -translate-y-1/2 rounded-lg px-2 text-xs font-medium text-muted hover:bg-paper hover:text-ink" onClick={() => setShow((value) => !value)}>
+            <button
+              type="button"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+              onClick={() => setShow((value) => !value)}
+            >
               {show ? t("auth.hide") : t("auth.show")}
             </button>
           </div>
         </Field>
       )}
       {(mode === "register" || mode === "reset") && strength && (
-        <p className="rounded-lg bg-paper px-3 py-2 text-xs font-medium text-muted" aria-live="polite">
+        <p className="text-xs font-medium text-muted" aria-live="polite">
           {strength === "good" ? t("auth.passwordGood") : strength === "fair" ? t("auth.passwordFair") : t("auth.passwordWeak")}
         </p>
       )}
@@ -120,31 +124,52 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
       )}
       {mode === "login" && (
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-          <label className="flex items-center gap-2 text-muted">
-            <input name="remember" type="checkbox" className="accent-accent" /> {t("auth.remember")}
+          <label className="flex items-center gap-2 text-ink-2">
+            <input name="remember" type="checkbox" className="h-3.5 w-3.5 rounded-sm accent-accent" />
+            {t("auth.remember")}
           </label>
-          <Link href="/forgot-password" className="font-medium text-accent hover:text-accent-strong">{t("auth.forgot")}</Link>
+          <Link
+            href="/forgot-password"
+            className="font-medium text-accent hover:underline hover:underline-offset-4"
+          >
+            {t("auth.forgot")}
+          </Link>
         </div>
       )}
-      {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
-      {info && <p role="status" className="rounded-lg bg-ok-soft px-3 py-2 text-sm text-ok">{info}</p>}
+      {error && (
+        <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+      {info && (
+        <p role="status" className="rounded-md bg-ok-soft px-3 py-2 text-sm text-ok">
+          {info}
+        </p>
+      )}
       <Button type="submit" disabled={pending} className="mt-1 w-full">
         {pending ? t("auth.loading") : mode === "login" ? t("auth.login") : mode === "register" ? t("auth.register") : mode === "forgot" ? t("auth.sendLink") : t("auth.reset")}
       </Button>
       {mode === "login" && (
         <p className="text-center text-sm text-muted">
-          <span className="mx-2 text-muted">{t("auth.or")}</span>
-          <span className="mt-2 block">{t("auth.noAccount")} <Link href="/register" className="font-medium text-accent hover:text-accent-strong">{t("auth.create")}</Link></span>
+          {t("auth.noAccount")}{" "}
+          <Link href="/register" className="font-medium text-accent hover:underline hover:underline-offset-4">
+            {t("auth.create")}
+          </Link>
         </p>
       )}
       {mode === "register" && (
         <p className="text-center text-sm text-muted">
-          {t("auth.haveAccount")} <Link href="/login" className="font-medium text-accent hover:text-accent-strong">{t("auth.loginLink")}</Link>
+          {t("auth.haveAccount")}{" "}
+          <Link href="/login" className="font-medium text-accent hover:underline hover:underline-offset-4">
+            {t("auth.loginLink")}
+          </Link>
         </p>
       )}
       {mode === "forgot" && (
         <p className="text-center text-sm">
-          <Link href="/login" className="text-accent">← {t("auth.backLogin")}</Link>
+          <Link href="/login" className="text-accent hover:underline hover:underline-offset-4">
+            {t("auth.backLogin")}
+          </Link>
         </p>
       )}
     </form>
