@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
-import { Button, Empty, SelectInput, TextInput, Toast, buttonClass } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Button, Empty, SelectInput, TextInput, Toast } from "@/components/ui";
 import { formatMs, normalizeCues, parseTimecode, repairCues } from "@/lib/cues";
 import { languageLabel } from "@/lib/i18n";
 import { putJson } from "@/services/client";
@@ -133,99 +134,176 @@ export function Editor({
   }
 
   return (
-    <div className="grid min-w-0 gap-5 rounded-3xl border border-line bg-white p-4 sm:p-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">{t("player.subtitles")}</p>
-        <h2 className="mt-1 text-xl font-bold tracking-tight">{t("editor.title")}</h2>
+    <div className="grid min-w-0 gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-ink">{t("editor.title")}</h2>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="mr-1 text-xs text-subtle">{t("project.export")}</span>
+          {["srt", "vtt", "ass"].map((kind) => (
+            <a
+              key={kind}
+              className="rounded-md px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+              href={`/api/export/${projectId}/${kind}?lang=${language}`}
+            >
+              {kind.toUpperCase()}
+            </a>
+          ))}
+          <a
+            className="rounded-md px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+            href={`/api/export/${projectId}/zip`}
+          >
+            ZIP
+          </a>
+        </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[12rem_minmax(12rem,1fr)_auto_auto]">
-        <SelectInput value={language} aria-label={t("player.subtitles")} onChange={(event) => onLanguageChange(event.target.value)}>
-          {languages.map((item) => <option key={item} value={item}>{languageLabel(locale, item)}</option>)}
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[10rem_minmax(10rem,1fr)_auto_auto]">
+        <SelectInput
+          value={language}
+          aria-label={t("player.subtitles")}
+          onChange={(event) => onLanguageChange(event.target.value)}
+        >
+          {languages.map((item) => (
+            <option key={item} value={item}>
+              {languageLabel(locale, item)}
+            </option>
+          ))}
         </SelectInput>
-        <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("editor.search")} aria-label={t("editor.search")} />
-        <Button type="button" variant="secondary" onClick={add}>{t("editor.create")}</Button>
-        <Button type="button" disabled={pending || cues.length === 0} onClick={() => void save()}>{pending ? t("auth.loading") : t("editor.save")}</Button>
+
+        <div className="relative">
+          <Icon
+            name="search"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+          />
+          <TextInput
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("editor.search")}
+            aria-label={t("editor.search")}
+            className="pl-9"
+          />
+        </div>
+
+        <Button type="button" variant="secondary" onClick={add}>
+          <Icon name="plus" className="h-4 w-4" />
+          {t("editor.create")}
+        </Button>
+        <Button type="button" disabled={pending || cues.length === 0} onClick={() => void save()}>
+          {pending ? t("auth.loading") : t("editor.save")}
+        </Button>
       </div>
-      <div className="flex max-w-full flex-wrap items-center gap-2 rounded-2xl bg-paper p-2">
-        <span className="px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted">{t("project.export")}</span>
-        <a className={buttonClass("ghost")} href={`/api/export/${projectId}/srt?lang=${language}`}>SRT</a>
-        <a className={buttonClass("ghost")} href={`/api/export/${projectId}/vtt?lang=${language}`}>VTT</a>
-        <a className={buttonClass("ghost")} href={`/api/export/${projectId}/ass?lang=${language}`}>ASS</a>
-        <a className={buttonClass("ghost")} href={`/api/export/${projectId}/zip`}>ZIP</a>
-      </div>
+
       {message && <Toast>{message}</Toast>}
       {error && <Toast tone="danger">{error}</Toast>}
       {visible.length === 0 && <Empty>{t("editor.empty")}</Empty>}
-      <ul className="grid gap-3">
+
+      <ul className="grid gap-2">
         {visible.map((cue) => (
           <li
             key={`${cue.index}-${cue.start_ms}`}
-            className={`grid min-w-0 gap-4 rounded-2xl border p-4 md:grid-cols-[13rem_minmax(0,1fr)] ${
-              selectedIndex === cue.index ? "border-violet/40 bg-violet-soft/60" : "border-line bg-paper/60"
+            className={`grid min-w-0 gap-3 rounded-lg border p-3 md:grid-cols-[11rem_minmax(0,1fr)] ${
+              selectedIndex === cue.index
+                ? "border-accent bg-accent-soft/50"
+                : "border-line bg-surface"
             }`}
             onFocusCapture={() => onSelect(cue)}
           >
-            <div className="text-sm text-muted">
+            <div className="text-sm">
               <button
                 type="button"
-                className="font-medium tabular-nums underline-offset-2 hover:text-ink hover:underline"
-                onClick={() => { onSelect(cue); onSeek?.(cue.start_ms); }}
+                className="tabular font-medium text-ink-2 underline-offset-2 hover:text-ink hover:underline"
+                onClick={() => {
+                  onSelect(cue);
+                  onSeek?.(cue.start_ms);
+                }}
               >
                 {formatMs(cue.start_ms)} → {formatMs(cue.end_ms)}
               </button>
-              <label className="mt-3 grid gap-1.5 text-xs font-medium">
-                {t("editor.start")}
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={startDraft[cue.index] ?? formatMs(cue.start_ms)}
-                  aria-label={t("editor.start")}
-                  className="min-h-9 w-full rounded-lg border border-line bg-white px-2 py-1 text-ink outline-none focus:border-accent"
-                  onChange={(event) => setStartDraft((current) => ({ ...current, [cue.index]: event.target.value }))}
-                  onBlur={(event) => {
-                    const parsed = parseTimecode(event.target.value);
-                    setStartDraft((current) => {
-                      const next = { ...current };
-                      delete next[cue.index];
-                      return next;
-                    });
-                    if (parsed !== null) update(cue.index, { start_ms: parsed });
-                  }}
-                />
-              </label>
-              <label className="mt-2 grid gap-1.5 text-xs font-medium">
-                {t("editor.end")}
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={endDraft[cue.index] ?? formatMs(cue.end_ms)}
-                  aria-label={t("editor.end")}
-                  className="min-h-9 w-full rounded-lg border border-line bg-white px-2 py-1 text-ink outline-none focus:border-accent"
-                  onChange={(event) => setEndDraft((current) => ({ ...current, [cue.index]: event.target.value }))}
-                  onBlur={(event) => {
-                    const parsed = parseTimecode(event.target.value);
-                    setEndDraft((current) => {
-                      const next = { ...current };
-                      delete next[cue.index];
-                      return next;
-                    });
-                    if (parsed !== null) update(cue.index, { end_ms: parsed });
-                  }}
-                />
-              </label>
+
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <label className="grid gap-1 text-[0.6875rem] font-medium text-subtle">
+                  {t("editor.start")}
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={startDraft[cue.index] ?? formatMs(cue.start_ms)}
+                    aria-label={t("editor.start")}
+                    className="tabular min-h-8 w-full rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+                    onChange={(event) =>
+                      setStartDraft((current) => ({ ...current, [cue.index]: event.target.value }))
+                    }
+                    onBlur={(event) => {
+                      const parsed = parseTimecode(event.target.value);
+                      setStartDraft((current) => {
+                        const next = { ...current };
+                        delete next[cue.index];
+                        return next;
+                      });
+                      if (parsed !== null) update(cue.index, { start_ms: parsed });
+                    }}
+                  />
+                </label>
+                <label className="grid gap-1 text-[0.6875rem] font-medium text-subtle">
+                  {t("editor.end")}
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={endDraft[cue.index] ?? formatMs(cue.end_ms)}
+                    aria-label={t("editor.end")}
+                    className="tabular min-h-8 w-full rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+                    onChange={(event) =>
+                      setEndDraft((current) => ({ ...current, [cue.index]: event.target.value }))
+                    }
+                    onBlur={(event) => {
+                      const parsed = parseTimecode(event.target.value);
+                      setEndDraft((current) => {
+                        const next = { ...current };
+                        delete next[cue.index];
+                        return next;
+                      });
+                      if (parsed !== null) update(cue.index, { end_ms: parsed });
+                    }}
+                  />
+                </label>
+              </div>
             </div>
+
             <div className="min-w-0">
               <textarea
                 value={cue.text}
                 aria-label={formatMs(cue.start_ms)}
                 onChange={(event) => update(cue.index, { text: event.target.value })}
-                className="min-h-28 w-full resize-y rounded-xl border border-line bg-white p-3 text-sm leading-6 outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
+                className="min-h-24 w-full resize-y rounded-md border border-line bg-surface p-2.5 text-sm leading-6 text-ink placeholder:text-subtle focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
               />
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Button type="button" variant="ghost" onClick={() => { onSelect(cue); onSeek?.(cue.start_ms); }}>{t("editor.playFrom")}</Button>
-                <Button type="button" variant="ghost" onClick={() => split(cue)}>{t("editor.split")}</Button>
-                <Button type="button" variant="ghost" onClick={() => merge(cue)}>{t("editor.merge")}</Button>
-                <Button type="button" variant="danger" onClick={() => remove(cue.index)}>{t("editor.delete")}</Button>
+              <div className="mt-1.5 flex flex-wrap items-center gap-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onSelect(cue);
+                    onSeek?.(cue.start_ms);
+                  }}
+                >
+                  <Icon name="play" className="h-3.5 w-3.5" />
+                  {t("editor.playFrom")}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => split(cue)}>
+                  {t("editor.split")}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => merge(cue)}>
+                  {t("editor.merge")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto text-danger hover:bg-danger-soft hover:text-danger"
+                  onClick={() => remove(cue.index)}
+                >
+                  <Icon name="trash" className="h-3.5 w-3.5" />
+                  {t("editor.delete")}
+                </Button>
               </div>
             </div>
           </li>
