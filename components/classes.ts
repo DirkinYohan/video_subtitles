@@ -15,7 +15,10 @@ const BUTTON_BASE =
   // `whitespace-nowrap`: una etiqueta nunca parte en dos líneas.
   "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold " +
   "focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)] " +
-  "disabled:pointer-events-none disabled:opacity-50";
+  // Un único estado deshabilitado para todas las variantes: caja neutra y
+  // legible, en vez de un tinte translúcido del color de la acción.
+  "disabled:cursor-not-allowed disabled:pointer-events-none " +
+  "disabled:!border disabled:!border-line disabled:!bg-surface-2 disabled:!text-subtle disabled:!shadow-none";
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
   sm: "min-h-9 px-3 text-sm",
