@@ -169,7 +169,7 @@ export function CreateStudio() {
               <span className="shrink-0 font-medium text-ink">
                 {flag(source)} {source === "und" ? t("studio.auto") : languageLabel(locale, source)}
               </span>
-              <Icon name="skipForward" className="h-3 w-3 shrink-0 text-subtle" />
+              <Icon name="arrowRight" className="h-3 w-3 shrink-0 text-subtle" />
               <span className="truncate text-muted">
                 {chosen.length > 0
                   ? chosen.map((lang) => languageLabel(locale, lang)).join(", ")
