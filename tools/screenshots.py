@@ -32,12 +32,17 @@ PROFILE = Path(os.environ.get("TEMP", ".")) / "ia_doblaje_shots"
 EMAIL = os.environ.get("IA_E2E_EMAIL", "e2emulti1791304689@e.co")
 PASSWORD = os.environ.get("IA_E2E_PASSWORD", "password123")
 
-DESKTOP = (1440, 900)
+DESKTOP = (1440, int(os.environ.get("IA_SHOT_HEIGHT", "900")))
 TABLET = (834, 1112)
 MOBILE = (390, 844)
 
 
 def project_with_cues() -> str | None:
+    # El proyecto se puede fijar por entorno: con la base en PostgreSQL ya no
+    # hay SQLite local donde buscarlo.
+    explicit = os.environ.get("IA_SHOT_PROJECT", "").strip()
+    if explicit:
+        return explicit
     db = ROOT.parent / "IA-Doblaje" / "data" / "app.sqlite"
     if not db.is_file():
         return None
@@ -111,6 +116,14 @@ async def capture(cdp: Cdp, path: str, name: str, size: tuple[int, int], theme: 
             break
         await asyncio.sleep(0.8)
     await asyncio.sleep(0.6)
+    # En headless, un vídeo pausado en el primer frame no se pinta: se arranca
+    # la reproducción (y se pausa) para que la captura muestre la imagen.
+    await cdp.evaluate(
+        "(async () => { const v = document.querySelector('video');"
+        " if (!v) return; try { await v.play(); } catch (e) {}"
+        " await new Promise(r => setTimeout(r, 1200)); try { v.pause(); } catch (e) {} })()"
+    )
+    await asyncio.sleep(0.5)
     shot = await cdp.call(
         "Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False}
     )

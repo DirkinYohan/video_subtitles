@@ -8,6 +8,14 @@ import type { Cue } from "@/types/domain";
 
 const ZOOM_LEVELS = [1, 2, 4, 8, 16] as const;
 
+/**
+ * Línea de tiempo del estudio.
+ *
+ * Se dibuja dentro de la misma superficie que el reproductor (`bare`), de modo
+ * que vídeo, transporte y pista se leen como una sola pieza: la regla arriba,
+ * la tira de miniaturas encima de los subtítulos y el cursor de reproducción
+ * atravesando ambos.
+ */
 export function Timeline({
   cues,
   durationMs,
@@ -18,6 +26,8 @@ export function Timeline({
   labels,
   onSeek,
   onSelect,
+  bare = false,
+  filmstripSrc,
 }: {
   cues: Cue[];
   durationMs: number;
@@ -29,10 +39,15 @@ export function Timeline({
   labels: { title: string; zoomIn: string; zoomOut: string; empty: string; pending?: string };
   onSeek: (ms: number) => void;
   onSelect: (cue: Cue) => void;
+  /** Sin borde ni fondo propios: lo aporta el contenedor del reproductor. */
+  bare?: boolean;
+  /** Tira de miniaturas ya montada por el servidor. */
+  filmstripSrc?: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [scrubbing, setScrubbing] = useState(false);
+  const [filmstripFailed, setFilmstripFailed] = useState(false);
 
   const span = durationMs > 0 ? durationMs : 1;
   const ticks = useMemo(() => rulerTicks(span, Math.max(4, Math.round(10 * zoom))), [span, zoom]);
@@ -72,39 +87,51 @@ export function Timeline({
   }
 
   const zoomIndex = ZOOM_LEVELS.indexOf(zoom as 1);
+  const playheadLeft = widthPct(timeMs);
+  const showFilmstrip = Boolean(filmstripSrc) && !filmstripFailed;
 
   return (
-    <section className="rounded-xl border border-line bg-surface" aria-label={labels.title}>
-      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
-        <p className="text-sm font-semibold text-ink">{labels.title}</p>
+    <section
+      className={
+        bare
+          ? "border-t border-line bg-surface"
+          : "overflow-hidden rounded-xl border border-line bg-surface"
+      }
+      aria-label={labels.title}
+    >
+      {/* Cabecera: nombre de la pista y zoom */}
+      <div className="flex items-center gap-2 px-4 pb-1 pt-3">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-subtle">
+          {labels.title}
+        </p>
 
         <div className="ml-auto flex items-center gap-0.5">
           <IconButton
             label={labels.zoomOut}
-            className="!h-7 !w-7"
+            className="!h-6 !w-6"
             disabled={zoomIndex <= 0}
             onClick={() => setZoom(ZOOM_LEVELS[Math.max(0, zoomIndex - 1)] ?? 1)}
           >
-            <Icon name="minus" className="h-3.5 w-3.5" />
+            <Icon name="minus" className="h-3 w-3" />
           </IconButton>
-          <span className="tabular min-w-8 text-center text-xs font-medium text-muted">
+          <span className="tabular min-w-7 text-center text-[0.6875rem] font-medium text-subtle">
             {zoom}×
           </span>
           <IconButton
             label={labels.zoomIn}
-            className="!h-7 !w-7"
+            className="!h-6 !w-6"
             disabled={zoomIndex >= ZOOM_LEVELS.length - 1}
             onClick={() => setZoom(ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, zoomIndex + 1)] ?? 1)}
           >
-            <Icon name="plus" className="h-3.5 w-3.5" />
+            <Icon name="plus" className="h-3 w-3" />
           </IconButton>
         </div>
       </div>
 
-      <div className="overflow-x-auto p-3">
+      <div className="overflow-x-auto px-4 pb-4">
         <div style={{ width: `${zoom * 100}%`, minWidth: "100%" }}>
           {/* Regla temporal */}
-          <div className="relative mb-1.5 h-4 select-none">
+          <div className="relative mb-1 h-4 select-none">
             {ticks.map((tick) => (
               <span
                 key={tick}
@@ -126,7 +153,7 @@ export function Timeline({
             aria-valuemax={span}
             aria-valuenow={Math.round(timeMs)}
             aria-valuetext={formatClock(timeMs)}
-            className={`relative h-[4.5rem] cursor-pointer overflow-hidden rounded-lg bg-surface-2 ${
+            className={`relative h-[5rem] cursor-pointer overflow-hidden rounded-lg bg-stage ${
               scrubbing ? "select-none" : ""
             }`}
             onPointerDown={(event) => {
@@ -153,11 +180,25 @@ export function Timeline({
               }
             }}
           >
+            {/* Tira de miniaturas del vídeo, encima de los subtítulos */}
+            {showFilmstrip && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={filmstripSrc}
+                alt=""
+                aria-hidden
+                draggable={false}
+                onError={() => setFilmstripFailed(true)}
+                className="pointer-events-none absolute inset-x-0 top-0 h-8 w-full select-none object-fill opacity-80"
+              />
+            )}
+
+            {/* Rejilla de la regla, dentro de la pista */}
             {ticks.map((tick) => (
               <span
                 key={tick}
                 aria-hidden
-                className="pointer-events-none absolute top-0 h-full w-px bg-line"
+                className="pointer-events-none absolute top-0 h-full w-px bg-white/[0.06]"
                 style={{ left: widthPct(tick) }}
               />
             ))}
@@ -166,7 +207,7 @@ export function Timeline({
             {coveredMs > 0 && coveredMs < span && (
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 bg-ink/[0.05]"
+                className="pointer-events-none absolute inset-y-0 right-0 bg-scrim/40"
                 style={{ left: widthPct(coveredMs) }}
               />
             )}
@@ -174,7 +215,7 @@ export function Timeline({
             {cues.map((cue) => {
               const isActive = activeIndex === cue.index;
               const isSelected = selectedIndex === cue.index;
-              const width = Math.max(0.4, ((cue.end_ms - cue.start_ms) / span) * 100);
+              const width = Math.max(0.5, ((cue.end_ms - cue.start_ms) / span) * 100);
               return (
                 <button
                   key={`${cue.index}-${cue.start_ms}`}
@@ -186,11 +227,11 @@ export function Timeline({
                     onSelect(cue);
                     onSeek(cue.start_ms);
                   }}
-                  className={`absolute top-6 h-8 overflow-hidden rounded px-1.5 text-left text-[0.625rem] leading-tight transition-colors ${
+                  className={`absolute top-9 h-[1.85rem] overflow-hidden rounded px-1.5 text-left text-[0.625rem] leading-[1.15] transition-colors ${
                     isSelected
-                      ? "z-20 bg-accent text-on-accent"
+                      ? "z-20 bg-accent font-medium text-on-accent"
                       : isActive
-                        ? "z-10 bg-accent/80 text-on-accent"
+                        ? "z-10 bg-accent/85 text-on-accent"
                         : "bg-accent-soft text-accent-ink hover:bg-accent-softer"
                   }`}
                   style={{ left: widthPct(cue.start_ms), width: `${width}%` }}
@@ -203,17 +244,17 @@ export function Timeline({
             {/* Playhead */}
             <span
               aria-hidden
-              className="pointer-events-none absolute top-0 z-30 h-full w-px bg-ink"
-              style={{ left: widthPct(timeMs) }}
+              className="pointer-events-none absolute top-0 z-30 h-full w-px bg-white/90"
+              style={{ left: playheadLeft }}
             >
-              <span className="absolute -left-[3px] -top-1 h-1.5 w-1.5 rounded-full bg-ink" />
+              <span className="absolute -left-[4px] -top-0.5 h-2 w-2 rotate-45 rounded-[1px] bg-white/90" />
             </span>
           </div>
 
           {coveredMs > 0 && coveredMs < span && labels.pending && (
-            <p className="mt-2 text-xs leading-5 text-muted">{labels.pending}</p>
+            <p className="mt-2 text-xs leading-5 text-subtle">{labels.pending}</p>
           )}
-          {cues.length === 0 && <p className="mt-3 text-sm text-muted">{labels.empty}</p>}
+          {cues.length === 0 && <p className="mt-3 text-sm text-subtle">{labels.empty}</p>}
         </div>
       </div>
     </section>

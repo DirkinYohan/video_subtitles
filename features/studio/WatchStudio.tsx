@@ -7,6 +7,7 @@ import { Icon } from "@/components/icons";
 import { Button, StatusDot, buttonClass } from "@/components/ui";
 import { Editor } from "@/features/editor/Editor";
 import { ProcessPanel } from "@/features/jobs/ProcessPanel";
+import { CueList } from "@/features/player/CueList";
 import { Player } from "@/features/player/Player";
 import { Timeline } from "@/features/player/Timeline";
 import { appendCues, cuesDuration, mergeServerTrack, normalizeCues } from "@/lib/cues";
@@ -302,50 +303,63 @@ export function WatchStudio({
           />
         </aside>
 
-        <div className="order-1 min-w-0 lg:order-2">
-          <Player
-            projectId={project.id}
+        <div className="order-1 grid min-w-0 gap-4 lg:order-2">
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+            <Player
+              bare
+              projectId={project.id}
+              cues={cues}
+              tracks={currentTracks}
+              lang={language}
+              onLangChange={setLanguage}
+              durationMs={timelineDuration}
+              timeMs={timeMs}
+              onTimeChange={setTimeMs}
+              onDurationChange={setDurationMs}
+              sourceLanguage={sourceLanguage}
+              targetLanguages={project.target_languages}
+              seekRef={seekRef}
+              onVideoElement={setVideoElement}
+              liveEnabled={liveEnabled}
+              onLiveToggle={setLiveEnabled}
+              liveStatus={live.status}
+              liveEvent={live.event}
+              processing={processing}
+              coveredMs={events.coveredMs}
+            />
+
+            {/* La pista vive en la misma superficie que el vídeo: vídeo,
+                transporte y subtítulos se leen como una sola pieza. */}
+            <Timeline
+              bare
+              cues={cues}
+              durationMs={timelineDuration}
+              timeMs={timeMs}
+              activeIndex={activeIndex}
+              selectedIndex={selectedIndex}
+              coveredMs={events.coveredMs}
+              labels={{
+                title: t("studio.timeline"),
+                zoomIn: t("timeline.zoomIn"),
+                zoomOut: t("timeline.zoomOut"),
+                empty: t("timeline.empty"),
+                pending: processing ? t("timeline.pending") : undefined,
+              }}
+              onSeek={seek}
+              onSelect={(cue) => setSelectedIndex(cue.index)}
+              filmstripSrc={`/api/videos/${project.id}/storyboard`}
+            />
+          </div>
+
+          <CueList
             cues={cues}
-            tracks={currentTracks}
-            lang={language}
-            onLangChange={setLanguage}
-            durationMs={timelineDuration}
-            timeMs={timeMs}
-            onTimeChange={setTimeMs}
-            onDurationChange={setDurationMs}
-            sourceLanguage={sourceLanguage}
-            targetLanguages={project.target_languages}
+            activeIndex={activeIndex}
             selectedIndex={selectedIndex}
-            onSelectCue={(cue) => setSelectedIndex(cue.index)}
-            seekRef={seekRef}
-            onVideoElement={setVideoElement}
-            liveEnabled={liveEnabled}
-            onLiveToggle={setLiveEnabled}
-            liveStatus={live.status}
-            liveEvent={live.event}
-            processing={processing}
-            coveredMs={events.coveredMs}
+            onSelect={(cue) => setSelectedIndex(cue.index)}
+            onSeek={seek}
           />
         </div>
       </div>
-
-      <Timeline
-        cues={cues}
-        durationMs={timelineDuration}
-        timeMs={timeMs}
-        activeIndex={activeIndex}
-        selectedIndex={selectedIndex}
-        coveredMs={events.coveredMs}
-        labels={{
-          title: t("studio.timeline"),
-          zoomIn: t("timeline.zoomIn"),
-          zoomOut: t("timeline.zoomOut"),
-          empty: t("timeline.empty"),
-          pending: processing ? t("timeline.pending") : undefined,
-        }}
-        onSeek={seek}
-        onSelect={(cue) => setSelectedIndex(cue.index)}
-      />
 
       <Editor
         projectId={project.id}

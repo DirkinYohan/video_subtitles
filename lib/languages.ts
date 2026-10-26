@@ -1,4 +1,4 @@
-export const LANGS = ["es", "en", "fr", "pt", "it", "de", "ja", "zh"] as const;
+export const LANGS = ["es", "en", "fr", "pt", "it"] as const;
 
 const FLAGS: Record<string, string> = {
   es: "🇪🇸",
@@ -6,9 +6,6 @@ const FLAGS: Record<string, string> = {
   fr: "🇫🇷",
   pt: "🇵🇹",
   it: "🇮🇹",
-  de: "🇩🇪",
-  ja: "🇯🇵",
-  zh: "🇨🇳",
   und: "✦",
 };
 
