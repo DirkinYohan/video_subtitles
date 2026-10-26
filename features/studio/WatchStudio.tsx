@@ -36,28 +36,17 @@ export function WatchStudio({
   const languages = useMemo(() => Object.keys(currentTracks), [currentTracks]);
 
   const [sourceLanguage, setSourceLanguage] = useState(project.source_language || "und");
-  // Idioma elegido EXPLÍCITAMENTE por el usuario. Mientras no elija, se deriva.
-  //
-  // Antes el idioma inicial salía de las pistas cargadas al montar. En un
-  // proyecto recién subido no hay ninguna, así que quedaba en el idioma de
-  // origen declarado ("und" con detección automática): los cues que llegaban
-  // por WebSocket ("en", "es", "fr"…) nunca coincidían y el reproductor no
-  // mostraba nada hasta recargar la página con el trabajo terminado.
+  // Idioma elegido EXPLÍCITAMENTE por el usuario.
   const [chosenLanguage, setChosenLanguage] = useState<string | null>(null);
-  const defaultLanguage = useMemo(() => {
-    const candidates = [
-      ...project.target_languages.filter((code) => code !== sourceLanguage),
-      sourceLanguage,
-      ...languages,
-    ].filter((code) => code && code !== "und");
-    return (
-      candidates.find((code) => (currentTracks[code]?.length ?? 0) > 0) ??
-      candidates[0] ??
-      languages[0] ??
-      "es"
-    );
-  }, [project.target_languages, sourceLanguage, languages, currentTracks]);
-  const language = chosenLanguage ?? defaultLanguage;
+  // El idioma inicial NO depende de las pistas que ya hayan llegado: antes se
+  // recalculaba en cada lote y en cuanto entraba el original (en) saltaba de
+  // «es» a «en» a mitad de reproducción, cambiando el idioma de los subtítulos
+  // sin que el usuario lo pidiera.
+  const initialLanguage = useMemo(() => {
+    const target = project.target_languages.find((code) => code && code !== sourceLanguage);
+    return target || sourceLanguage || project.target_languages[0] || "es";
+  }, [project.target_languages, sourceLanguage]);
+  const language = chosenLanguage ?? initialLanguage;
   const setLanguage = setChosenLanguage;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [producing, setProducing] = useState(false);
@@ -210,6 +199,15 @@ export function WatchStudio({
   const readyToProduce = currentJob === null || currentJob.status === "PENDING";
   const editorLanguages = languages.length ? languages : [project.source_language || "es"];
 
+  // Hasta dónde hay subtítulos. Mientras el trabajo avanza, el reproductor no
+  // debe adelantar a esta marca; con el trabajo terminado (o inexistente) no se
+  // bloquea nada.
+  const coveredMs = useMemo(() => {
+    if (!processing) return timelineDuration;
+    const fromJob = currentJob?.last_cue_ms ?? 0;
+    return Math.max(events.coveredMs, fromJob);
+  }, [processing, events.coveredMs, currentJob?.last_cue_ms, timelineDuration]);
+
   return (
     <div className="mx-auto grid min-w-0 max-w-7xl gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -293,7 +291,7 @@ export function WatchStudio({
           <ProcessPanel
             job={currentJob}
             eventsStatus={events.status}
-            coveredMs={events.coveredMs}
+            coveredMs={coveredMs}
             durationMs={events.durationMs || timelineDuration}
             onCancel={cancel}
             onRetry={() => retry(project.id, "progressive")}
@@ -325,7 +323,7 @@ export function WatchStudio({
               liveStatus={live.status}
               liveEvent={live.event}
               processing={processing}
-              coveredMs={events.coveredMs}
+              coveredMs={coveredMs}
             />
 
             {/* La pista vive en la misma superficie que el vídeo: vídeo,
@@ -337,7 +335,7 @@ export function WatchStudio({
               timeMs={timeMs}
               activeIndex={activeIndex}
               selectedIndex={selectedIndex}
-              coveredMs={events.coveredMs}
+              coveredMs={coveredMs}
               labels={{
                 title: t("studio.timeline"),
                 zoomIn: t("timeline.zoomIn"),

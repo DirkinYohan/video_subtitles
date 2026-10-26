@@ -149,6 +149,7 @@
   "player.audio": "Audio",
   "player.subtitles": "Subtítulos",
   "player.cueList": "Subtítulos",
+  "player.waitingCues": "Preparando subtítulos…",
   "player.mediaError": "No se pudo cargar el video.",
   "player.live": "En vivo",
   "player.liveOn": "Tiempo real activo: el audio se transcribe mientras se reproduce.",

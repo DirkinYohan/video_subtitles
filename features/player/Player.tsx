@@ -86,12 +86,37 @@ export function Player({
     };
   }, [seek, seekRef]);
 
+  // Cue del idioma elegido. Mientras su traducción no llega, se muestra el
+  // original: es preferible leer algo en el idioma de origen a dejar el vídeo
+  // sin texto o bloqueado esperando la traducción.
   const cue = activeCue(cues, timeMs);
+  const sourceCues = tracks[sourceLanguage] ?? [];
+  const fallbackCue =
+    !cue && lang !== sourceLanguage && sourceLanguage ? activeCue(sourceCues, timeMs) : null;
   const liveShown = liveEvent
     ? liveEvent.translations[lang] || (lang === sourceLanguage ? liveEvent.text : "")
     : "";
-  const overlay = liveShown || cue?.text || "";
+  const overlay = liveShown || cue?.text || fallbackCue?.text || "";
+  const overlayIsFallback = Boolean(!liveShown && !cue && fallbackCue);
   const provisional = Boolean(liveShown) && Boolean(liveEvent?.provisional);
+
+  // --- Espera de subtítulos -------------------------------------------------
+  // Con el trabajo en curso, el vídeo no puede adelantar al texto: si el tramo
+  // que toca todavía no está transcrito, se pausa y se avisa. Antes el vídeo
+  // arrancaba igual y el primer subtítulo llegaba con la reproducción ya
+  // avanzada, que es justo lo que se veía como «los subtítulos van tarde».
+  const [wantsPlay, setWantsPlay] = useState(false);
+  const covered = Math.max(0, coveredMs ?? 0);
+  const blocked = Boolean(processing) && timeMs >= covered && timeMs < (durationMs || Infinity);
+  const waiting = blocked && wantsPlay;
+
+  // Reanuda cuando el tramo pendiente ya tiene subtítulos. Es un efecto
+  // secundario puro: no llama a setState, así que no provoca cascadas.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !wantsPlay || blocked) return;
+    if (video.paused) void video.play().catch(() => undefined);
+  }, [wantsPlay, blocked]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -152,21 +177,44 @@ export function Player({
               if (element.volume === 0) element.volume = 1;
               onVideoElement(element);
             }}
-            onTimeUpdate={(event) =>
-              onTimeChange(Math.round(event.currentTarget.currentTime * 1000))
-            }
+            onTimeUpdate={(event) => {
+              const element = event.currentTarget;
+              const ms = Math.round(element.currentTime * 1000);
+              onTimeChange(ms);
+              // Alcanzado el final de lo transcrito: se detiene y espera.
+              if (processing && ms >= covered) {
+                setWantsPlay(true);
+                element.pause();
+              }
+            }}
             onPlay={() => {
               setPlaying(true);
               setError("");
+              if (blocked) {
+                // Quiere avanzar pero el tramo aún no tiene subtítulos.
+                setWantsPlay(true);
+                videoRef.current?.pause();
+              } else {
+                setWantsPlay(false);
+              }
             }}
-            onPause={() => setPlaying(false)}
+            onPause={() => {
+              setPlaying(false);
+              // Una pausa voluntaria cancela la intención de reanudar.
+              if (!blocked) setWantsPlay(false);
+            }}
             onError={() => setError(t("player.mediaError"))}
           />
 
-          {show && overlay && (
+          {show && overlay && !waiting && (
             <div className="pointer-events-none absolute inset-x-[7%] bottom-[11%] text-center">
               {provisional && (
                 <p className="mb-1 text-xs font-medium text-white/85">{t("player.livePartial")}</p>
+              )}
+              {overlayIsFallback && (
+                <p className="mb-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-white/70">
+                  {languageLabel(locale, sourceLanguage)}
+                </p>
               )}
               <span
                 className={`inline-block max-w-[85%] rounded-md bg-scrim-strong px-3.5 py-2 leading-snug text-white backdrop-blur-sm [text-wrap:balance] ${CAPTION_CLASS[size]} ${
@@ -174,6 +222,15 @@ export function Player({
                 }`}
               >
                 {overlay}
+              </span>
+            </div>
+          )}
+
+          {waiting && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[11%] text-center">
+              <span className="inline-flex items-center gap-2 rounded-md bg-scrim-strong px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+                <StatusDot tone="accent" pulse />
+                {t("player.waitingCues")}
               </span>
             </div>
           )}
