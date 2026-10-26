@@ -149,6 +149,7 @@
   "player.audio": "Audio",
   "player.subtitles": "Subtitles",
   "player.cueList": "Subtitles",
+  "player.waitingCues": "Preparing subtitles…",
   "player.mediaError": "The video couldn't be loaded.",
   "player.live": "Live",
   "player.liveOn": "Real time on: the audio is transcribed as it plays.",
