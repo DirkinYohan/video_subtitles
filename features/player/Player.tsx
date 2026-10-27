@@ -6,11 +6,16 @@ import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
 import { StatusDot, IconButton } from "@/components/ui";
 import { CAPTION_CLASS, useCaptionSize, writeCaptionSize, type CaptionSize } from "@/lib/captions";
-import { activeCue, formatClock } from "@/lib/cues";
+import { formatClock } from "@/lib/cues";
 import { languageLabel } from "@/lib/i18n";
 import { flag } from "@/lib/languages";
-import type { LiveEvent, LiveStatus } from "@/lib/useLiveSubtitles";
+import { needsSubtitleWait, trackState } from "@/lib/subtitleSync";
+import type { LiveStatus } from "@/lib/useLiveTrack";
+import { useSubtitleSync } from "@/lib/useSubtitleSync";
 import type { Cue } from "@/types/domain";
+
+/** Máximo que el vídeo espera a sus subtítulos antes de arrancar igualmente. */
+const MAX_HOLD_MS = 10_000;
 
 export function Player({
   projectId,
@@ -29,9 +34,12 @@ export function Player({
   liveEnabled,
   onLiveToggle,
   liveStatus,
-  liveEvent,
   processing,
   coveredMs,
+  generating = false,
+  coveredAt,
+  holdForSubtitles = false,
+  trackFailed = false,
   bare = false,
 }: {
   projectId: string;
@@ -50,16 +58,53 @@ export function Player({
   liveEnabled: boolean;
   onLiveToggle: (next: boolean) => void;
   liveStatus: LiveStatus;
-  liveEvent: LiveEvent | null;
   /** Hay un trabajo de producción en curso (independiente de la reproducción). */
   processing?: boolean;
-  /** Hasta qué ms hay subtítulos listos. */
+  /** Hasta qué ms (del vídeo) llega «Producir» en el idioma elegido. */
   coveredMs?: number;
+  /** Se están generando subtítulos (Producir o en vivo). */
+  generating?: boolean;
+  /** ¿Está procesado el instante `ms` en el idioma elegido? */
+  coveredAt?: (ms: number) => boolean;
+  /** Al dar play (o saltar) a un tramo sin subtítulos, esperar a que lleguen. */
+  holdForSubtitles?: boolean;
+  /** La traducción al idioma elegido falló. */
+  trackFailed?: boolean;
   /** Sin borde ni redondeo: lo aporta el contenedor que comparte con la pista. */
   bare?: boolean;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [element, setElement] = useState<HTMLVideoElement | null>(null);
+  const attachVideo = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    setElement(node);
+  }, []);
   const { t, locale } = useI18n();
+
+  // Duración real y salvaguarda de sonido, en cuanto hay metadatos.
+  const applyMetadata = useCallback(
+    (video: HTMLVideoElement) => {
+      const total = Math.round(video.duration * 1000);
+      if (Number.isFinite(total) && total > 0) onDurationChange(total);
+      // El vídeo debe sonar siempre. Si algo lo dejó silenciado o con
+      // volumen 0, se restaura al cargar.
+      video.muted = false;
+      if (video.volume === 0) video.volume = 1;
+    },
+    [onDurationChange],
+  );
+
+  // El <video> se entrega al dueño (modo en vivo) en cuanto EXISTE, no en
+  // `loadedmetadata`: con el medio en caché los metadatos se cargan antes de
+  // que React hidrate, ese evento no llega a verse y el modo en vivo se quedaba
+  // sin vídeo (no enviaba audio ni se enteraba de play, pausa o saltos).
+  useEffect(() => {
+    if (!element) return;
+    onVideoElement(element);
+    if (element.readyState >= 1) applyMetadata(element);
+    return () => onVideoElement(null);
+  }, [element, onVideoElement, applyMetadata]);
+
   const [show, setShow] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
@@ -86,37 +131,71 @@ export function Player({
     };
   }, [seek, seekRef]);
 
-  // Cue del idioma elegido. Mientras su traducción no llega, se muestra el
-  // original: es preferible leer algo en el idioma de origen a dejar el vídeo
-  // sin texto o bloqueado esperando la traducción.
-  const cue = activeCue(cues, timeMs);
-  const sourceCues = tracks[sourceLanguage] ?? [];
-  const fallbackCue =
-    !cue && lang !== sourceLanguage && sourceLanguage ? activeCue(sourceCues, timeMs) : null;
-  const liveShown = liveEvent
-    ? liveEvent.translations[lang] || (lang === sourceLanguage ? liveEvent.text : "")
-    : "";
-  const overlay = liveShown || cue?.text || fallbackCue?.text || "";
-  const overlayIsFallback = Boolean(!liveShown && !cue && fallbackCue);
-  const provisional = Boolean(liveShown) && Boolean(liveEvent?.provisional);
-
-  // --- Espera de subtítulos -------------------------------------------------
-  // Con el trabajo en curso, el vídeo no puede adelantar al texto: si el tramo
-  // que toca todavía no está transcrito, se pausa y se avisa. Antes el vídeo
-  // arrancaba igual y el primer subtítulo llegaba con la reproducción ya
-  // avanzada, que es justo lo que se veía como «los subtítulos van tarde».
-  const [wantsPlay, setWantsPlay] = useState(false);
-  const covered = Math.max(0, coveredMs ?? 0);
-  const blocked = Boolean(processing) && timeMs >= covered && timeMs < (durationMs || Infinity);
-  const waiting = blocked && wantsPlay;
-
-  // Reanuda cuando el tramo pendiente ya tiene subtítulos. Es un efecto
-  // secundario puro: no llama a setState, así que no provoca cascadas.
+  // --- Subtítulo visible ----------------------------------------------------
+  // Lo decide el reloj del <video> (ver `SubtitleSync`), no `timeMs`: ese
+  // estado llega por `timeupdate` (~4 por segundo) y hacía que cada frase
+  // apareciera y desapareciera hasta 250 ms tarde.
+  //
+  // Sólo se muestra el idioma elegido. Antes, sin traducción, se mostraba el
+  // original: el usuario veía otro idioma sin haberlo pedido. Ahora se informa
+  // del estado de la pista.
+  const { snapshot } = useSubtitleSync(element, cues);
+  const overlay = snapshot.cue?.text || "";
+  // Instrumentación: primer subtítulo pintado (sin su contenido).
+  const firstShown = useRef(false);
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !wantsPlay || blocked) return;
-    if (video.paused) void video.play().catch(() => undefined);
-  }, [wantsPlay, blocked]);
+    if (!overlay || firstShown.current) return;
+    firstShown.current = true;
+    console.debug(
+      `[LIVE] primer subtítulo visible a los ${Math.round(performance.now())} ms de cargar la página (vídeo en ${snapshot.timeMs} ms)`,
+    );
+  }, [overlay, snapshot.timeMs]);
+
+  // Estado de la pista elegida en el instante actual. El procesamiento NO
+  // bloquea la reproducción: si este tramo aún no está listo en este idioma se
+  // dice, y el texto aparece en cuanto llega su lote.
+  const covered = coveredAt ? coveredAt(timeMs) : false;
+  const state = trackState({ cueCount: cues.length, covered, generating, failed: trackFailed });
+
+  // --- Espera breve de subtítulos (como el «buffering» de un vídeo) --------
+  // Al pulsar Reproducir o saltar a un tramo que aún no tiene subtítulos en el
+  // idioma elegido, el vídeo espera a que el servidor los genere (segundos) y
+  // arranca solo. Así el primer diálogo no se pierde. Tope de MAX_HOLD_MS:
+  // pasado ese tiempo se reproduce igualmente. Durante la reproducción normal
+  // no hace falta: el servidor va por delante del cabezal.
+  const [holding, setHolding] = useState(false);
+  const forcePlay = useRef(false);
+  const shouldHold = (video: HTMLVideoElement) =>
+    needsSubtitleWait({
+      enabled: holdForSubtitles,
+      captionsOn: show,
+      forced: forcePlay.current,
+      covered: coveredAt?.(Math.round(video.currentTime * 1000)) ?? true,
+    });
+
+  useEffect(() => {
+    if (!holding || !covered) return;
+    void videoRef.current?.play().catch(() => undefined);
+  }, [holding, covered]);
+
+  useEffect(() => {
+    if (!holding) return;
+    const timer = window.setTimeout(() => {
+      forcePlay.current = true;
+      void videoRef.current?.play().catch(() => undefined);
+    }, MAX_HOLD_MS);
+    return () => window.clearTimeout(timer);
+  }, [holding]);
+
+  const stateNote = holding
+    ? t("player.holding", { lang: languageLabel(locale, lang) })
+    : overlay || state === "ready"
+      ? ""
+      : state === "processing"
+        ? t("player.trackProcessing", { lang: languageLabel(locale, lang) })
+        : state === "failed"
+          ? t("player.trackFailed", { lang: languageLabel(locale, lang) })
+          : t("player.trackMissing", { lang: languageLabel(locale, lang) });
 
   useEffect(() => {
     const video = videoRef.current;
@@ -139,12 +218,16 @@ export function Player({
       ? t("player.liveOn")
       : liveStatus === "connecting"
         ? t("player.liveConnecting")
-        : liveStatus === "error"
-          ? t("player.liveError")
-          : t("player.liveOff");
+        : liveStatus === "busy"
+          ? t("player.liveBusy")
+          : liveStatus === "complete"
+            ? t("player.liveDone")
+          : liveStatus === "error"
+            ? t("player.liveError")
+            : t("player.liveOff");
 
   const liveTone =
-    liveStatus === "live"
+    liveStatus === "live" || liveStatus === "complete"
       ? "ok"
       : liveStatus === "connecting"
         ? "warn"
@@ -164,73 +247,67 @@ export function Player({
         {/* --- Imagen --- */}
         <div className="relative bg-stage">
           <video
-            ref={videoRef}
+            ref={attachVideo}
             src={`/api/videos/${projectId}/media`}
             className="aspect-video w-full object-contain"
-            onLoadedMetadata={(event) => {
-              const element = event.currentTarget;
-              const total = Math.round(element.duration * 1000);
-              if (Number.isFinite(total) && total > 0) onDurationChange(total);
-              // Salvaguarda: el vídeo debe sonar siempre. Si algo lo dejó
-              // silenciado o con volumen 0, se restaura al cargar.
-              element.muted = false;
-              if (element.volume === 0) element.volume = 1;
-              onVideoElement(element);
-            }}
+            onLoadedMetadata={(event) => applyMetadata(event.currentTarget)}
             onTimeUpdate={(event) => {
-              const element = event.currentTarget;
-              const ms = Math.round(element.currentTime * 1000);
-              onTimeChange(ms);
-              // Alcanzado el final de lo transcrito: se detiene y espera.
-              if (processing && ms >= covered) {
-                setWantsPlay(true);
-                element.pause();
+              const video = event.currentTarget;
+              onTimeChange(Math.round(video.currentTime * 1000));
+              // La reproducción alcanza el final de lo preparado: se espera
+              // en vez de seguir sin subtítulos (y se retoma sola).
+              if (!video.paused && shouldHold(video)) {
+                console.debug(
+                  `[LIVE] espera de subtítulos en ${Math.round(video.currentTime * 1000)} ms (el vídeo alcanzó lo preparado)`,
+                );
+                setHolding(true);
+                video.pause();
               }
             }}
-            onPlay={() => {
-              setPlaying(true);
+            onSeeked={(event) => {
+              // Posición efectiva tras el salto (la pedida puede ajustarse).
+              const video = event.currentTarget;
+              onTimeChange(Math.round(video.currentTime * 1000));
+              if (!video.paused && shouldHold(video)) {
+                setHolding(true);
+                video.pause();
+              }
+            }}
+            onPlay={(event) => {
+              const video = event.currentTarget;
               setError("");
-              if (blocked) {
-                // Quiere avanzar pero el tramo aún no tiene subtítulos.
-                setWantsPlay(true);
-                videoRef.current?.pause();
-              } else {
-                setWantsPlay(false);
+              if (shouldHold(video)) {
+                setHolding(true);
+                video.pause();
+                return;
               }
+              forcePlay.current = false;
+              setHolding(false);
+              setPlaying(true);
             }}
-            onPause={() => {
-              setPlaying(false);
-              // Una pausa voluntaria cancela la intención de reanudar.
-              if (!blocked) setWantsPlay(false);
-            }}
+            onPause={() => setPlaying(false)}
             onError={() => setError(t("player.mediaError"))}
           />
 
-          {show && overlay && !waiting && (
+          {show && overlay && (
             <div className="pointer-events-none absolute inset-x-[7%] bottom-[11%] text-center">
-              {provisional && (
-                <p className="mb-1 text-xs font-medium text-white/85">{t("player.livePartial")}</p>
-              )}
-              {overlayIsFallback && (
-                <p className="mb-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-white/70">
-                  {languageLabel(locale, sourceLanguage)}
-                </p>
-              )}
               <span
-                className={`inline-block max-w-[85%] rounded-md bg-scrim-strong px-3.5 py-2 leading-snug text-white backdrop-blur-sm [text-wrap:balance] ${CAPTION_CLASS[size]} ${
-                  provisional ? "opacity-85" : ""
-                }`}
+                lang={lang}
+                className={`inline-block max-w-[85%] rounded-md bg-scrim-strong px-3.5 py-2 leading-snug text-white backdrop-blur-sm [text-wrap:balance] ${CAPTION_CLASS[size]}`}
               >
                 {overlay}
               </span>
             </div>
           )}
 
-          {waiting && (
+          {show && stateNote && (
             <div className="pointer-events-none absolute inset-x-0 bottom-[11%] text-center">
-              <span className="inline-flex items-center gap-2 rounded-md bg-scrim-strong px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
-                <StatusDot tone="accent" pulse />
-                {t("player.waitingCues")}
+              <span
+                role="status"
+                className="inline-flex items-center gap-2 rounded-md bg-scrim-strong px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
+              >
+                {(holding || state === "processing") && <StatusDot tone="accent" pulse />}
+                {stateNote}
               </span>
             </div>
           )}

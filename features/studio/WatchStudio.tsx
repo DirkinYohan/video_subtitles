@@ -16,7 +16,8 @@ import { flag } from "@/lib/languages";
 import { isActive } from "@/lib/status";
 import { cuesFromEvent, useJobEvents } from "@/lib/useJobEvents";
 import { useJobProgress } from "@/lib/useJobProgress";
-import { useLiveSubtitles } from "@/lib/useLiveSubtitles";
+import { findCueIndex, inRanges, mergeCoverage } from "@/lib/subtitleSync";
+import { useLiveTrack, type LiveCueBatch } from "@/lib/useLiveTrack";
 import { postJson } from "@/services/client";
 import type { Cue, Job, VideoProject } from "@/types/domain";
 
@@ -58,26 +59,40 @@ export function WatchStudio({
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const seekRef = useRef<(ms: number) => void>(() => undefined);
 
-  // --- Modo en vivo (independiente del procesamiento en segundo plano) ----
-  const [liveEnabled, setLiveEnabled] = useState(false);
-  const live = useLiveSubtitles({
-    video: videoElement,
-    sourceLanguage,
-    targets: project.target_languages,
-    enabled: liveEnabled,
-  });
+  // --- Modo en vivo: activo por defecto ----------------------------------
+  // El servidor genera los subtítulos desde que termina la subida; el
+  // reproductor se engancha a ese proceso y le dice qué se está viendo para
+  // que lo prepare primero. Se puede apagar.
+  const [liveEnabled, setLiveEnabled] = useState(true);
 
   const cues = currentTracks[language] || [];
   const timelineDuration = Math.max(durationMs, cuesDuration(cues), 1000);
-  const activeIndex = cues.find((cue) => cue.start_ms <= timeMs && timeMs < cue.end_ms)?.index ?? null;
+  const activeIndex = cues[findCueIndex(cues, timeMs)]?.index ?? null;
+  // Cobertura por idioma según el servidor (sobrevive a recargas de la página).
+  const [serverCoverage, setServerCoverage] = useState<Record<string, number>>({});
 
   const seek = useCallback((ms: number) => seekRef.current(ms), [seekRef]);
 
+  // Las recargas se solapan (evento, sondeo, reconexión). Una respuesta más
+  // antigua que la última aplicada se descarta en lugar de sobrescribirla.
+  const loadSeq = useRef(0);
+  const appliedSeq = useRef(0);
   const loadTracks = useCallback(async () => {
+    const seq = ++loadSeq.current;
     try {
       const response = await fetch(`/api/subtitles/${project.id}`, { credentials: "include" });
       if (!response.ok) return;
-      const data = (await response.json()) as { subtitles: { language: string; cues: Cue[] }[] };
+      const data = (await response.json()) as {
+        subtitles: { language: string; cues: Cue[]; covered_ms?: number }[];
+      };
+      if (seq < appliedSeq.current) return;
+      appliedSeq.current = seq;
+      setServerCoverage((current) =>
+        mergeCoverage(
+          current,
+          Object.fromEntries((data.subtitles || []).map((track) => [track.language, Number(track.covered_ms ?? 0)])),
+        ),
+      );
       // Se FUSIONA con lo local: una respuesta pedida antes de un evento
       // WebSocket no puede borrar los cues que ese evento ya añadió.
       setCurrentTracks((current) => {
@@ -208,6 +223,51 @@ export function WatchStudio({
     return Math.max(events.coveredMs, fromJob);
   }, [processing, events.coveredMs, currentJob?.last_cue_ms, timelineDuration]);
 
+  // Cobertura del idioma ELEGIDO. Las traducciones van por detrás del
+  // original: usar la cobertura global hacía creer que un tramo ya tenía texto
+  // en el idioma elegido cuando sólo lo tenía en el original.
+  const languageCoveredMs = Math.max(
+    events.coverage[language] ?? 0,
+    serverCoverage[language] ?? 0,
+    language === sourceLanguage ? (currentJob?.last_cue_ms ?? 0) : 0,
+    processing ? 0 : cuesDuration(cues),
+  );
+
+  // --- Subtítulos en vivo (cuando «Producir» no está en marcha) -----------
+  const onLiveCues = useCallback((lang: string, batch: LiveCueBatch) => {
+    const incoming = batch.map((cue) => ({
+      index: 0,
+      start_ms: Number(cue.start_ms),
+      end_ms: Number(cue.end_ms),
+      text: String(cue.text),
+      speaker: "",
+      language: lang,
+      state: "final" as const,
+    }));
+    setCurrentTracks((current) => ({ ...current, [lang]: appendCues(current[lang] ?? [], incoming, lang) }));
+  }, []);
+  const live = useLiveTrack({
+    projectId: project.id,
+    video: videoElement,
+    language,
+    // También mientras el job está en curso: el job y el reproductor comparten
+    // el MISMO proceso del servidor, que prioriza lo que se está viendo.
+    enabled: liveEnabled,
+    onCues: onLiveCues,
+    onSourceLanguage: setSourceLanguage,
+  });
+  const liveActive = live.status === "live" || live.status === "connecting";
+
+  const languageFailed =
+    events.failedLanguages.includes(language) || live.failed.includes(language);
+  // ¿Está procesado un instante en el idioma elegido? Por «Producir» (de
+  // forma continua desde 0) o por el modo en vivo (tramos sueltos).
+  const liveRanges = live.coverage[language];
+  const coveredAt = useCallback(
+    (ms: number) => ms < languageCoveredMs || inRanges(liveRanges, ms),
+    [languageCoveredMs, liveRanges],
+  );
+
   return (
     <div className="mx-auto grid min-w-0 max-w-7xl gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -321,9 +381,12 @@ export function WatchStudio({
               liveEnabled={liveEnabled}
               onLiveToggle={setLiveEnabled}
               liveStatus={live.status}
-              liveEvent={live.event}
+              generating={processing || liveActive}
+              coveredAt={coveredAt}
+              holdForSubtitles={live.status === "live"}
               processing={processing}
-              coveredMs={coveredMs}
+              coveredMs={languageCoveredMs}
+              trackFailed={languageFailed}
             />
 
             {/* La pista vive en la misma superficie que el vídeo: vídeo,
@@ -335,7 +398,7 @@ export function WatchStudio({
               timeMs={timeMs}
               activeIndex={activeIndex}
               selectedIndex={selectedIndex}
-              coveredMs={coveredMs}
+              coveredMs={processing ? languageCoveredMs : timelineDuration}
               labels={{
                 title: t("studio.timeline"),
                 zoomIn: t("timeline.zoomIn"),
