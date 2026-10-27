@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { mergeCoverage } from "@/lib/subtitleSync";
 import { fetchWsTicket, wsUrl, wsUrlWithTicket } from "@/lib/ws";
 import type { Cue, Job } from "@/types/domain";
 
@@ -16,7 +17,12 @@ export type JobEvent =
   | { type: "processing_progress"; status: string; stage: string; progress: number; covered_ms?: number; duration_ms?: number }
   | {
       type: "subtitle_created";
+      /** Idioma del lote (cada idioma llega en su propio evento). */
+      language?: string;
+      /** Cobertura del idioma del lote, en ms del vídeo original. */
       covered_ms: number;
+      /** Cobertura por idioma: las traducciones van por detrás del original. */
+      covered_by_language?: Record<string, number>;
       duration_ms: number;
       progress: number;
       /** Cues del idioma ORIGINAL de este lote. */
@@ -60,6 +66,9 @@ export function useJobEvents({
   const [coveredMs, setCoveredMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [error, setError] = useState("");
+  // Hasta dónde está procesada cada pista (ms del vídeo) e idiomas fallidos.
+  const [coverage, setCoverage] = useState<Record<string, number>>({});
+  const [failedLanguages, setFailedLanguages] = useState<string[]>([]);
 
   const retryRef = useRef(1000);
 
@@ -140,8 +149,16 @@ export function useJobEvents({
             break;
           case "subtitle_created": {
             setProgress(Number(event.progress ?? 0));
-            setCoveredMs(Number(event.covered_ms ?? 0));
+            // La cobertura global es la del original (la que va por delante):
+            // un lote de traducción, más atrasado, no la hace retroceder.
+            setCoveredMs((current) => Math.max(current, Number(event.covered_ms ?? 0)));
             setDurationMs(Number(event.duration_ms ?? 0));
+            {
+              const byLanguage =
+                event.covered_by_language ??
+                { [event.language || event.source_language]: Number(event.covered_ms ?? 0) };
+              setCoverage((current) => mergeCoverage(current, byLanguage));
+            }
             const languages = Object.keys(event.cues_by_language ?? {});
             console.debug(
               `[WS] subtitle_created · cubierto=${event.covered_ms}ms · idiomas=[${languages.join(", ")}]`,
@@ -152,6 +169,9 @@ export function useJobEvents({
           case "translation_failed":
             console.warn("[WS] translation_failed", event.language, event.error);
             setError(event.error);
+            setFailedLanguages((current) =>
+              current.includes(event.language) ? current : [...current, event.language],
+            );
             break;
           case "processing_failed":
             console.error("[WS] processing_failed", event.error);
@@ -228,8 +248,14 @@ export function useJobEvents({
     coveredMs: jobId ? coveredMs : 0,
     durationMs: jobId ? durationMs : 0,
     error: jobId ? error : "",
+    coverage: jobId ? coverage : NO_COVERAGE,
+    failedLanguages: jobId ? failedLanguages : NO_LANGUAGES,
   };
 }
+
+const NO_COVERAGE: Record<string, number> = {};
+const NO_LANGUAGES: string[] = [];
+
 
 /**
  * Convierte los cues de un evento en cues de dominio.
