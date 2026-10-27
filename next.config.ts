@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   experimental: {
     proxyClientMaxBodySize: "2048mb",
+    // El proxy corta a los 30 s por defecto. Subir un vídeo (recibirlo,
+    // medirlo con ffprobe y guardarlo en Storage) tarda más: la API terminaba
+    // con 200 pero el navegador recibía un 500 («socket hang up»).
+    proxyTimeout: 15 * 60 * 1000,
   },
   async rewrites() {
     const api = process.env.API_INTERNAL_URL || "http://127.0.0.1:8000";
