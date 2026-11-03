@@ -197,7 +197,6 @@
   "account.title": "Cuenta",
   "account.personal": "Información personal",
   "account.name": "Nombre",
-  "account.email": "Correo",
   "account.since": "Fecha de registro",
   "account.saveName": "Guardar nombre",
   "account.nameSaved": "Nombre actualizado",
@@ -245,6 +244,12 @@
   "upload.startHint": "La preparación empieza en cuanto termina la subida.",
   "upload.change": "Cambiar video",
   "upload.into": "Traducir a",
+  "account.subtitle": "Gestiona tu perfil, tu seguridad y tus preferencias.",
   "studio.tabs": "Panel del proyecto",
-  "editor.subtitle": "Corrige el texto o los tiempos de cualquier frase y guarda los cambios."
+  "editor.subtitle": "Corrige el texto o los tiempos de cualquier frase y guarda los cambios.",
+  "account.personalHint": "Tu nombre tal como aparece en la aplicación.",
+  "account.emailHint": "El correo con el que inicias sesión. Confírmalo con tu contraseña actual.",
+  "account.securityHint": "Usa una contraseña larga que no utilices en otros sitios.",
+  "account.preferencesHint": "Idioma de la interfaz, tema y tamaño de los subtítulos.",
+  "account.theme": "Tema"
 }

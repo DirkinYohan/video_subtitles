@@ -197,7 +197,6 @@
   "account.title": "Account",
   "account.personal": "Personal information",
   "account.name": "Name",
-  "account.email": "Email",
   "account.since": "Joined",
   "account.saveName": "Save name",
   "account.nameSaved": "Name updated",
@@ -245,6 +244,12 @@
   "upload.startHint": "Preparation starts as soon as the upload ends.",
   "upload.change": "Change video",
   "upload.into": "Translate into",
+  "account.subtitle": "Manage your profile, security and preferences.",
   "studio.tabs": "Project panel",
-  "editor.subtitle": "Fix the text or timing of any line and save your changes."
+  "editor.subtitle": "Fix the text or timing of any line and save your changes.",
+  "account.personalHint": "Your name as it appears in the app.",
+  "account.emailHint": "The email you sign in with. Confirm it with your current password.",
+  "account.securityHint": "Use a long password you do not use anywhere else.",
+  "account.preferencesHint": "Interface language, theme and subtitle size.",
+  "account.theme": "Theme"
 }
