@@ -4,16 +4,34 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
+import { Icon } from "@/components/icons";
+import { buttonClass } from "@/components/classes";
 import { Button, Field, TextInput } from "@/components/ui";
-import { postJson } from "@/services/client";
+import { ResendVerification } from "@/features/auth/ResendVerification";
+import { ApiError, postJson } from "@/services/client";
 
 type Mode = "login" | "register" | "forgot" | "reset";
 
-export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
+export function AuthForm({
+  mode,
+  token = "",
+  notice = "",
+  email: initialEmail = "",
+}: {
+  mode: Mode;
+  token?: string;
+  /** Aviso inicial (p. ej. «correo confirmado» al volver del enlace). */
+  notice?: string;
+  email?: string;
+}) {
   const router = useRouter();
   const { t, locale } = useI18n();
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  const [info, setInfo] = useState(notice);
+  // Registro hecho: falta confirmar el correo antes de poder entrar.
+  const [checkInbox, setCheckInbox] = useState("");
+  // Login rechazado porque el correo aún no está confirmado.
+  const [unverified, setUnverified] = useState("");
   const [pending, setPending] = useState(false);
   const [show, setShow] = useState(false);
   const [password, setPassword] = useState("");
@@ -31,6 +49,7 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
     event.preventDefault();
     setError("");
     setInfo("");
+    setUnverified("");
     if (mode !== "forgot" && password.length < 8) {
       setError(t("auth.short"));
       return;
@@ -49,6 +68,7 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
           remember: data.get("remember") === "on",
         });
         router.push("/projects");
+        router.refresh();
       } else if (mode === "register") {
         await postJson("/api/auth/register", {
           name: data.get("name"),
@@ -57,7 +77,8 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
           confirm,
           locale,
         });
-        router.push("/projects");
+        // Sin sesión: se entra después de confirmar el correo.
+        setCheckInbox(String(data.get("email") || "").trim().toLowerCase());
       } else if (mode === "forgot") {
         await postJson("/api/auth/forgot-password", { email: data.get("email"), locale });
         setInfo(t("auth.sent"));
@@ -66,10 +87,33 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
         router.push("/login");
       }
     } catch (err) {
+      if (mode === "login" && err instanceof ApiError && err.status === 403) {
+        setError(t("verify.notVerified"));
+        setUnverified(String(data.get("email") || "").trim().toLowerCase());
+        return;
+      }
       setError(err instanceof Error ? err.message : t("auth.genericError"));
     } finally {
       setPending(false);
     }
+  }
+
+  if (checkInbox) {
+    return (
+      <div className="grid gap-5">
+        <div role="status" className="grid gap-2 rounded-xl bg-accent-soft px-4 py-4 text-sm">
+          <p className="flex items-center gap-2 font-semibold text-accent-ink">
+            <Icon name="check" className="h-4 w-4" />
+            {t("verify.checkInboxTitle")}
+          </p>
+          <p className="break-words leading-6 text-ink-2">{t("verify.checkInboxBody", { email: checkInbox })}</p>
+        </div>
+        <ResendVerification email={checkInbox} />
+        <Link href="/login" className={`${buttonClass("secondary")} w-full`}>
+          {t("verify.toLogin")}
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -81,7 +125,7 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
       )}
       {mode !== "reset" && (
         <Field label={t("auth.email")}>
-          <TextInput name="email" type="email" autoComplete="email" required />
+          <TextInput name="email" type="email" autoComplete="email" required defaultValue={initialEmail} />
         </Field>
       )}
       {mode !== "forgot" && (
@@ -142,6 +186,7 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
           {error}
         </p>
       )}
+      {unverified && <ResendVerification key={unverified} email={unverified} />}
       {info && (
         <p role="status" className="rounded-md bg-ok-soft px-3 py-2 text-sm text-ok">
           {info}

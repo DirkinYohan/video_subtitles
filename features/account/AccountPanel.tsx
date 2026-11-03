@@ -60,10 +60,15 @@ export function AccountPanel({ user }: { user: User }) {
     setNotice("");
     setPending("email");
     try {
-      const data = await postJson<{ email: string }>("/api/auth/change-email", { email, password: emailPassword, locale });
+      const data = await postJson<{ email: string; pending_email: string }>("/api/auth/change-email", {
+        email,
+        password: emailPassword,
+        locale,
+      });
       setEmail(data.email);
       setEmailPassword("");
-      setNotice(t("account.emailSavedVerify"));
+      // El cambio se aplica al confirmar la dirección nueva desde su correo.
+      setNotice(data.pending_email ? t("account.emailPending", { email: data.pending_email }) : "");
       router.refresh();
     } catch (caught) {
       setError(t(errorMessageKey(caught)));
