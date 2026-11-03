@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { LanguageMenu } from "@/components/LanguageMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { glassClass } from "@/components/classes";
 import { Wordmark } from "@/components/Wordmark";
 import type { User } from "@/types/domain";
@@ -53,6 +54,7 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-0.5">
+            <ThemeToggle />
             <LanguageMenu />
             <UserMenu user={user} />
           </div>

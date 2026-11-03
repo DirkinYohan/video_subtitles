@@ -5,7 +5,7 @@ export type IconName =
   | "chevron" | "play" | "pause" | "volume" | "expand" | "upload" | "search" | "globe"
   | "skipBack" | "skipForward"
   | "plus" | "minus" | "more" | "check" | "download" | "pencil" | "trash" | "clock" | "alert" | "spark"
-  | "arrowLeft" | "arrowRight";
+  | "arrowLeft" | "arrowRight" | "sun" | "moon";
 
 /**
  * Iconos de la interfaz.
@@ -116,6 +116,15 @@ function paths(name: IconName): ReactNode {
       return <path d="M12 4l9 16H3zM12 10v4M12 17.2v.1" />;
     case "spark":
       return <path d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z" />;
+    case "sun":
+      return (
+        <>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4" />
+        </>
+      );
+    case "moon":
+      return <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />;
     case "globe":
     default:
       return (

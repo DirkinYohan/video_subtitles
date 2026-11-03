@@ -1,6 +1,8 @@
 {
   "app.name": "IA Doblaje",
   "app.tagline": "Subtitling and translation",
+  "theme.toLight": "Switch to light mode",
+  "theme.toDark": "Switch to dark mode",
   "a11y.main": "Content",
   "a11y.sidebar": "Main navigation",
   "a11y.skipToContent": "Skip to content",

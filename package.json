@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:i18n": "node scripts/check-i18n.mjs",
-    "test": "node lib/cues.test.mjs && node lib/subtitleSync.test.mjs && node lib/status.test.mjs && node lib/boundaries.test.mjs && node lib/i18n-keys.test.mjs && node scripts/check-i18n.mjs",
+    "test": "node lib/cues.test.mjs && node lib/theme.test.mjs && node lib/subtitleSync.test.mjs && node lib/status.test.mjs && node lib/boundaries.test.mjs && node lib/i18n-keys.test.mjs && node scripts/check-i18n.mjs",
     "verify": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {

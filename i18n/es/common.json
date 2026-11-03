@@ -1,6 +1,8 @@
 {
   "app.name": "IA Doblaje",
   "app.tagline": "Subtitulado y traducción",
+  "theme.toLight": "Cambiar a modo claro",
+  "theme.toDark": "Cambiar a modo oscuro",
   "a11y.main": "Contenido",
   "a11y.sidebar": "Navegación principal",
   "a11y.skipToContent": "Ir al contenido",

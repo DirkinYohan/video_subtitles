@@ -566,6 +566,30 @@ body[data-scroll-locked="true"] {
 }
 
 /* =====================================================================
+   CAMBIO DE TEMA
+   El tema nuevo se revela en círculo desde el botón que lo pidió
+   (View Transitions). El origen lo fija el botón en --theme-x / --theme-y.
+   ===================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: theme-reveal 520ms var(--ease-in-out-quart);
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 0));
+  }
+  to {
+    clip-path: circle(150vmax at var(--theme-x, 50%) var(--theme-y, 0));
+  }
+}
+
+/* =====================================================================
    ACCESIBILIDAD
    ===================================================================== */
 @media (prefers-reduced-motion: reduce) {

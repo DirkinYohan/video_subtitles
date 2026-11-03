@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { buttonClass } from "@/components/classes";
 import { Icon } from "@/components/icons";
 import { LanguageMenu } from "@/components/LanguageMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Wordmark } from "@/components/Wordmark";
 import { translate, type Locale, type MessageKey } from "@/lib/i18n";
 
@@ -12,6 +13,7 @@ export function PublicHeader({ locale }: { locale: Locale }) {
     <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:h-[4.5rem] sm:px-6">
       <Wordmark label={t("app.name")} />
       <nav className="flex items-center gap-1 text-sm">
+        <ThemeToggle />
         <LanguageMenu />
         <Link
           href="/login"
@@ -92,7 +94,8 @@ export function AuthScreen({
           <div className="mt-8">{children}</div>
           {footer && <div className="mt-6 text-sm text-muted">{footer}</div>}
 
-          <div className="mt-10 flex justify-center border-t border-line pt-5">
+          <div className="mt-10 flex items-center justify-center gap-1 border-t border-line pt-5">
+            <ThemeToggle />
             <LanguageMenu />
           </div>
         </div>
