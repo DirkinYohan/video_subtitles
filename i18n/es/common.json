@@ -154,7 +154,6 @@
   "studio.sizeMd": "Normal",
   "studio.sizeLg": "Grande",
   "studio.sizeXl": "Muy grande",
-  "studio.emptyPlayer": "El video aparecerá aquí.",
   "studio.timeline": "Línea de tiempo",
   "upload.title": "Nuevo proyecto",
   "timeline.zoomIn": "Ampliar",
@@ -239,5 +238,13 @@
   "status.PARTIALLY_READY": "Parcialmente listo",
   "status.UPLOADED": "Subido",
   "status.READY_TO_PLAY": "Listo para reproducir",
-  "projects.subtitle": "Sube, traduce y revisa tus videos en un solo lugar."
+  "projects.subtitle": "Sube, traduce y revisa tus videos en un solo lugar.",
+  "upload.subtitle": "Sube un video, elige los idiomas y la IA prepara los subtítulos mientras lo ves.",
+  "upload.step1": "Video",
+  "upload.step2": "Idiomas",
+  "upload.step3": "Procesar",
+  "upload.summary": "Resumen",
+  "upload.startHint": "La preparación empieza en cuanto termina la subida.",
+  "upload.change": "Cambiar video",
+  "upload.into": "Traducir a"
 }

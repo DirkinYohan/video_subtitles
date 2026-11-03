@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
-import { Button, Progress, buttonClass } from "@/components/ui";
+import { Button, PageHeader, Progress, StatusDot, buttonClass, fieldClass } from "@/components/ui";
 import { formatClock } from "@/lib/cues";
+import { displayTitle, formatBytes } from "@/lib/format";
 import { languageLabel } from "@/lib/i18n";
 import { LANGS, flag } from "@/lib/languages";
 import { errorMessageKey } from "@/services/client";
@@ -88,138 +88,235 @@ export function CreateStudio() {
   const chosen = targets.filter((lang) => lang !== source);
   const canStart = Boolean(file) && phase === "idle" && chosen.length > 0;
 
+  const steps = [
+    { label: t("upload.step1"), done: Boolean(file) },
+    { label: t("upload.step2"), done: Boolean(file) && chosen.length > 0 },
+    { label: t("upload.step3"), done: phase !== "idle" },
+  ];
+  const current = steps.findIndex((step) => !step.done);
+
   return (
-    <div className="mx-auto grid max-w-7xl gap-6">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/projects"
-          aria-label={t("studio.back")}
-          className={`${buttonClass("secondary")} !h-10 !w-10 !rounded-xl !px-0`}
-        >
-          <Icon name="arrowLeft" className="h-4 w-4" />
-        </Link>
-        <h1 className="text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
-          {t("upload.title")}
-        </h1>
-      </div>
+    <div className="mx-auto grid max-w-6xl gap-7">
+      <PageHeader
+        crumbs={[{ href: "/projects", label: t("projects.title") }]}
+        title={t("upload.title")}
+        description={t("upload.subtitle")}
+      />
 
-      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
-        <aside className="grid min-w-0 gap-5 rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
-          <label
-            className={`group grid cursor-pointer place-items-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-[border-color,background-color,transform] duration-200 ${
-              over
-                ? "scale-[1.01] border-accent bg-accent-soft"
-                : "border-line-strong bg-gradient-to-b from-surface-2/60 to-surface hover:border-accent/60 hover:bg-accent-soft/50"
-            }`}
-            onDragOver={(event) => {
-              event.preventDefault();
-              setOver(true);
-            }}
-            onDragLeave={() => setOver(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setOver(false);
-              chooseFile(event.dataTransfer.files[0] ?? null);
-            }}
-          >
-            <span className="brand-mark grid h-11 w-11 place-items-center rounded-xl transition-transform duration-300 ease-[var(--ease-out-quart)] group-hover:-translate-y-0.5">
-              <Icon name="upload" className="h-5 w-5" />
-            </span>
-            <span className="mt-1.5 max-w-full truncate text-sm font-medium text-ink">
-              {file ? file.name : t("studio.drop")}
-            </span>
-            <span className="text-xs text-muted">
-              {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : t("studio.or")}
-            </span>
-            <span className="text-[0.6875rem] text-subtle">{t("studio.formats")}</span>
-            <input
-              type="file"
-              accept=".mp4,.mkv,.mov,.wav,.mp3,.m4a,video/*,audio/*"
-              className="sr-only"
-              onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
-            />
-          </label>
-
-          <label className="grid gap-1.5 text-sm">
-            <span className="font-medium text-ink">{t("studio.source")}</span>
-            <span className="relative">
-              <select
-                value={source}
-                onChange={(event) => setSource(event.target.value)}
-                className="min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface pl-3.5 pr-9 text-sm text-ink shadow-[var(--shadow-card)] transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+      {/* Pasos: se completan solos a medida que se avanza. */}
+      <ol className="flex items-center gap-2 sm:gap-3" aria-label={t("upload.title")}>
+        {steps.map((step, index) => {
+          const isCurrent = index === current;
+          return (
+            <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <span
+                aria-current={isCurrent ? "step" : undefined}
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors duration-300 ${
+                  step.done
+                    ? "bg-accent text-on-accent shadow-[var(--shadow-button)]"
+                    : isCurrent
+                      ? "border-2 border-accent bg-surface text-accent-ink"
+                      : "border border-line-strong bg-surface text-subtle"
+                }`}
               >
-                <option value="und">{t("studio.auto")}</option>
-                {LANGS.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {flag(lang)} {languageLabel(locale, lang)}
-                  </option>
-                ))}
-              </select>
-              <Icon
-                name="chevron"
-                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
-              />
-            </span>
-          </label>
-
-          <fieldset className="min-w-0">
-            <legend className="mb-2 text-sm font-medium text-ink">{t("studio.targets")}</legend>
-
-            <div className="mb-2.5 flex items-center gap-1.5 overflow-hidden rounded-md bg-surface-2 px-2.5 py-2 text-xs">
-              <span className="shrink-0 font-medium text-ink">
-                {flag(source)} {source === "und" ? t("studio.auto") : languageLabel(locale, source)}
+                {step.done ? <Icon name="check" className="h-4 w-4" /> : index + 1}
               </span>
-              <Icon name="arrowRight" className="h-3 w-3 shrink-0 text-subtle" />
-              <span className="truncate text-muted">
-                {chosen.length > 0
-                  ? chosen.map((lang) => languageLabel(locale, lang)).join(", ")
-                  : "—"}
+              <span className={`truncate text-sm font-medium ${step.done || isCurrent ? "text-ink" : "text-subtle"}`}>
+                {step.label}
               </span>
-            </div>
-
-            <div className="grid max-h-52 grid-cols-2 gap-1 overflow-y-auto pr-1 lg:grid-cols-1">
-              {options.map((lang) => {
-                const checked = targets.includes(lang);
-                return (
-                  <label
-                    key={lang}
-                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
-                      checked ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-surface-2"
+              {index < steps.length - 1 && (
+                <span className="relative h-px min-w-4 flex-1 overflow-hidden rounded-full bg-line-strong">
+                  <span
+                    className={`absolute inset-y-0 left-0 bg-accent transition-[width] duration-500 ease-[var(--ease-out-quart)] ${
+                      step.done ? "w-full" : "w-0"
                     }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="peer sr-only"
-                      checked={checked}
-                      onChange={() => toggle(lang)}
-                    />
-                    <span
-                      aria-hidden="true"
-                      className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors peer-focus-visible:shadow-[var(--focus-ring)] ${
-                        checked
-                          ? "border-accent bg-accent text-on-accent"
-                          : "border-line-strong bg-surface"
-                      }`}
-                    >
-                      {checked && <Icon name="check" className="h-3 w-3" />}
-                    </span>
-                    <span className="truncate">
-                      {flag(lang)} {languageLabel(locale, lang)}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+                  />
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
 
-          {error && (
-            <p role="alert" className="text-sm text-danger">
-              {error}
-            </p>
+      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        {/* --- 1. Video --- */}
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+          {preview ? (
+            <>
+              <video ref={videoRef} src={preview} className="aspect-video w-full bg-stage object-contain" controls />
+              <div className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
+                  <Icon name="play" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink" title={file?.name}>
+                    {file ? displayTitle(file.name) : ""}
+                  </p>
+                  <p className="tabular text-xs text-muted">{file ? formatBytes(file.size, locale) : ""}</p>
+                </div>
+                {phase === "idle" && (
+                  <label className={`${buttonClass("secondary", "sm")} cursor-pointer`}>
+                    <Icon name="upload" className="h-4 w-4" />
+                    {t("upload.change")}
+                    <input
+                      type="file"
+                      accept=".mp4,.mkv,.mov,.wav,.mp3,.m4a,video/*,audio/*"
+                      className="sr-only"
+                      onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                )}
+              </div>
+            </>
+          ) : (
+            <label
+              className={`group relative grid aspect-video cursor-pointer place-items-center overflow-hidden p-6 text-center transition-colors duration-200 ${
+                over ? "bg-accent-soft" : "bg-surface"
+              }`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setOver(true);
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setOver(false);
+                chooseFile(event.dataTransfer.files[0] ?? null);
+              }}
+            >
+              <span
+                aria-hidden="true"
+                className={`absolute inset-3 rounded-xl border-2 border-dashed transition-colors duration-200 ${
+                  over ? "border-accent" : "border-line-strong group-hover:border-accent/60"
+                }`}
+              />
+              <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 opacity-60" />
+              <span className="relative grid justify-items-center gap-2">
+                <span
+                  className={`brand-mark grid h-14 w-14 place-items-center rounded-2xl transition-transform duration-300 ease-[var(--ease-out-quart)] group-hover:-translate-y-1 ${
+                    over ? "scale-110" : ""
+                  }`}
+                >
+                  <Icon name="upload" className="h-6 w-6" />
+                </span>
+                <span className="mt-3 text-base font-semibold text-ink">{t("studio.drop")}</span>
+                <span className="text-sm text-muted">{t("studio.or")}</span>
+                <span className="mt-1 text-xs text-subtle">{t("studio.formats")}</span>
+              </span>
+              <input
+                type="file"
+                accept=".mp4,.mkv,.mov,.wav,.mp3,.m4a,video/*,audio/*"
+                className="sr-only"
+                onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
+              />
+            </label>
           )}
 
-          <div className="grid gap-2">
-            <Button type="button" className="w-full" disabled={!canStart} onClick={() => void start()}>
+          {phase !== "idle" && (
+            <div className="grid gap-2.5 border-t border-line px-4 py-4">
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="inline-flex items-center gap-2 font-medium text-ink">
+                  <StatusDot tone="accent" pulse />
+                  {phase === "preparing" ? t("studio.preparing") : t("studio.uploading")}
+                </span>
+                <span className="tabular text-sm font-semibold text-ink">{percent}%</span>
+              </div>
+              <Progress value={percent} label={t("studio.uploading")} />
+              <p className="tabular text-xs text-subtle">
+                {formatBytes(loaded, locale)} / {formatBytes(total, locale)}
+                {speed > 0 && ` · ${formatBytes(speed, locale)}/s`}
+                {speed > 0 && total > loaded && ` · ${formatClock(((total - loaded) / speed) * 1000)}`}
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* --- 2. Idiomas y 3. Procesar --- */}
+        <aside className="grid min-w-0 gap-5 lg:sticky lg:top-24">
+          <section className="grid gap-5 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-ink">{t("studio.source")}</span>
+              <span className="relative">
+                <select
+                  value={source}
+                  disabled={phase !== "idle"}
+                  onChange={(event) => setSource(event.target.value)}
+                  className={`${fieldClass} cursor-pointer appearance-none pr-9`}
+                >
+                  <option value="und">{t("studio.auto")}</option>
+                  {LANGS.map((lang) => (
+                    <option key={lang} value={lang}>
+                      {flag(lang)} {languageLabel(locale, lang)}
+                    </option>
+                  ))}
+                </select>
+                <Icon
+                  name="chevron"
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+                />
+              </span>
+            </label>
+
+            <fieldset className="min-w-0" disabled={phase !== "idle"}>
+              <legend className="mb-2.5 text-sm font-medium text-ink">{t("upload.into")}</legend>
+              <div className="flex flex-wrap gap-2">
+                {options.map((lang) => {
+                  const checked = targets.includes(lang);
+                  return (
+                    <label
+                      key={lang}
+                      className={`inline-flex cursor-pointer select-none items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow] duration-200 has-[:focus-visible]:shadow-[var(--focus-ring)] ${
+                        checked
+                          ? "border-accent/50 bg-accent-soft text-accent-ink"
+                          : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                      }`}
+                    >
+                      <input type="checkbox" className="sr-only" checked={checked} onChange={() => toggle(lang)} />
+                      <span aria-hidden="true">{flag(lang)}</span>
+                      {languageLabel(locale, lang)}
+                      <span
+                        aria-hidden="true"
+                        className={`grid h-4 w-4 place-items-center rounded-full transition-[transform,opacity] duration-200 ${
+                          checked ? "scale-100 bg-accent text-on-accent opacity-100" : "scale-50 opacity-0"
+                        }`}
+                      >
+                        <Icon name="check" className="h-2.5 w-2.5" />
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          </section>
+
+          <section className="grid gap-4 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+            <h2 className="text-sm font-semibold text-ink">{t("upload.summary")}</h2>
+            <dl className="grid gap-2.5 text-sm">
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-muted">{t("upload.step1")}</dt>
+                <dd className="min-w-0 truncate font-medium text-ink">{file ? displayTitle(file.name) : "—"}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-muted">{t("studio.source")}</dt>
+                <dd className="font-medium text-ink">
+                  {flag(source)} {source === "und" ? t("studio.auto") : languageLabel(locale, source)}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-muted">{t("upload.into")}</dt>
+                <dd className="min-w-0 truncate text-right font-medium text-ink">
+                  {chosen.length > 0 ? chosen.map((lang) => languageLabel(locale, lang)).join(", ") : "—"}
+                </dd>
+              </div>
+            </dl>
+
+            {error && (
+              <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+                {error}
+              </p>
+            )}
+
+            <Button type="button" className="min-h-11 w-full" disabled={!canStart} onClick={() => void start()}>
               <Icon name="spark" className="h-4 w-4" />
               {phase === "idle" ? t("studio.start") : t("studio.uploading")}
             </Button>
@@ -228,49 +325,9 @@ export function CreateStudio() {
                 {t("studio.cancel")}
               </Button>
             )}
-          </div>
+            <p className="text-center text-xs leading-5 text-subtle">{t("upload.startHint")}</p>
+          </section>
         </aside>
-
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
-          <div className="relative">
-            {preview ? (
-              <video
-                ref={videoRef}
-                src={preview}
-                className="aspect-video w-full bg-stage object-contain"
-                controls
-              />
-            ) : (
-              <div className="relative grid aspect-video place-items-center overflow-hidden bg-stage p-6 text-center">
-                <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0" />
-                <div className="relative grid justify-items-center gap-3">
-                  <span className="grid h-14 w-14 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 backdrop-blur">
-                    <Icon name="play" className="ml-0.5 h-6 w-6" />
-                  </span>
-                  <p className="text-sm text-white/60">{t("studio.emptyPlayer")}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {phase !== "idle" && (
-            <div className="grid gap-2.5 border-t border-line px-4 py-3.5">
-              <div className="flex items-baseline justify-between gap-2 text-sm">
-                <span className="font-medium text-ink">
-                  {phase === "preparing" ? t("studio.preparing") : t("studio.uploading")}
-                </span>
-                <span className="tabular text-xs text-muted">{percent}%</span>
-              </div>
-              <Progress value={percent} label={t("studio.uploading")} />
-              <p className="tabular text-xs text-subtle">
-                {file?.name} · {(loaded / (1024 * 1024)).toFixed(1)} /{" "}
-                {(total / (1024 * 1024)).toFixed(1)} MB
-                {speed > 0 && ` · ${(speed / (1024 * 1024)).toFixed(1)} MB/s`}
-                {speed > 0 && total > loaded && ` · ${formatClock(((total - loaded) / speed) * 1000)}`}
-              </p>
-            </div>
-          )}
-        </section>
       </div>
     </div>
   );
