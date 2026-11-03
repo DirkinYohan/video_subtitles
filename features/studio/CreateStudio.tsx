@@ -89,27 +89,27 @@ export function CreateStudio() {
   const canStart = Boolean(file) && phase === "idle" && chosen.length > 0;
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-5">
-      <div className="flex items-center gap-2.5">
+    <div className="mx-auto grid max-w-7xl gap-6">
+      <div className="flex items-center gap-3">
         <Link
           href="/projects"
           aria-label={t("studio.back")}
-          className={`${buttonClass("secondary")} !h-9 !w-9 !px-0`}
+          className={`${buttonClass("secondary")} !h-10 !w-10 !rounded-xl !px-0`}
         >
-          <Icon name="skipBack" className="h-4 w-4" />
+          <Icon name="arrowLeft" className="h-4 w-4" />
         </Link>
-        <h1 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+        <h1 className="text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
           {t("upload.title")}
         </h1>
       </div>
 
       <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
-        <aside className="grid min-w-0 gap-4 rounded-xl border border-line bg-surface p-3.5 lg:sticky lg:top-20">
+        <aside className="grid min-w-0 gap-5 rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
           <label
-            className={`grid cursor-pointer place-items-center gap-1.5 rounded-lg border border-dashed px-4 py-7 text-center transition-colors ${
+            className={`group grid cursor-pointer place-items-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-[border-color,background-color,transform] duration-200 ${
               over
-                ? "border-accent bg-accent-soft"
-                : "border-line-strong bg-surface-2 hover:border-accent hover:bg-accent-soft/60"
+                ? "scale-[1.01] border-accent bg-accent-soft"
+                : "border-line-strong bg-gradient-to-b from-surface-2/60 to-surface hover:border-accent/60 hover:bg-accent-soft/50"
             }`}
             onDragOver={(event) => {
               event.preventDefault();
@@ -122,7 +122,7 @@ export function CreateStudio() {
               chooseFile(event.dataTransfer.files[0] ?? null);
             }}
           >
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-ink-2">
+            <span className="brand-mark grid h-11 w-11 place-items-center rounded-xl transition-transform duration-300 ease-[var(--ease-out-quart)] group-hover:-translate-y-0.5">
               <Icon name="upload" className="h-5 w-5" />
             </span>
             <span className="mt-1.5 max-w-full truncate text-sm font-medium text-ink">
@@ -146,7 +146,7 @@ export function CreateStudio() {
               <select
                 value={source}
                 onChange={(event) => setSource(event.target.value)}
-                className="min-h-10 w-full cursor-pointer appearance-none rounded-md border border-line bg-surface pl-3 pr-9 text-sm text-ink transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+                className="min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface pl-3.5 pr-9 text-sm text-ink shadow-[var(--shadow-card)] transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
               >
                 <option value="und">{t("studio.auto")}</option>
                 {LANGS.map((lang) => (
@@ -231,7 +231,7 @@ export function CreateStudio() {
           </div>
         </aside>
 
-        <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
           <div className="relative">
             {preview ? (
               <video
@@ -241,12 +241,13 @@ export function CreateStudio() {
                 controls
               />
             ) : (
-              <div className="grid aspect-video place-items-center bg-surface-2 p-6 text-center">
-                <div className="grid justify-items-center gap-2">
-                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-subtle">
-                    <Icon name="play" className="h-5 w-5" />
+              <div className="relative grid aspect-video place-items-center overflow-hidden bg-stage p-6 text-center">
+                <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0" />
+                <div className="relative grid justify-items-center gap-3">
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 backdrop-blur">
+                    <Icon name="play" className="ml-0.5 h-6 w-6" />
                   </span>
-                  <p className="text-sm text-muted">{t("studio.emptyPlayer")}</p>
+                  <p className="text-sm text-white/60">{t("studio.emptyPlayer")}</p>
                 </div>
               </div>
             )}

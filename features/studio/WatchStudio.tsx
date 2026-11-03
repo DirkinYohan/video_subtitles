@@ -269,19 +269,32 @@ export function WatchStudio({
   );
 
   return (
-    <div className="mx-auto grid min-w-0 max-w-7xl gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
+    <div className="mx-auto grid min-w-0 max-w-7xl gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/projects"
             aria-label={t("studio.back")}
-            className={`${buttonClass("secondary")} !h-9 !w-9 !px-0`}
+            className={`${buttonClass("secondary")} !h-10 !w-10 shrink-0 !rounded-xl !px-0`}
           >
             <Icon name="arrowLeft" className="h-4 w-4" />
           </Link>
-          <h1 className="truncate text-lg font-semibold tracking-tight text-ink sm:text-xl">
-            {project.title}
-          </h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
+              {project.title}
+            </h1>
+            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+              <span className="font-medium text-ink-2">
+                {flag(sourceLanguage)} {languageLabel(locale, sourceLanguage)}
+              </span>
+              <Icon name="arrowRight" className="h-3 w-3 text-subtle" />
+              {project.target_languages.map((code) => (
+                <span key={code} className="rounded-md bg-surface-2 px-1.5 py-0.5 font-medium text-ink-2">
+                  {flag(code)} {languageLabel(locale, code)}
+                </span>
+              ))}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -291,7 +304,7 @@ export function WatchStudio({
               {producing ? t("process.starting") : t("process.produce")}
             </Button>
           ) : processing ? (
-            <span className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent-soft px-3 text-sm font-medium text-accent-ink">
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent-soft px-3.5 text-sm font-medium text-accent-ink">
               <StatusDot tone="accent" pulse />
               {t("process.processing")}
             </span>
@@ -310,43 +323,41 @@ export function WatchStudio({
       )}
 
       <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]">
-        <aside className="order-2 grid min-w-0 gap-4 overflow-hidden rounded-xl border border-line bg-surface p-3.5 lg:order-1 lg:sticky lg:top-20">
-          {project.thumbnail_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={project.thumbnail_url}
-              alt=""
-              className="aspect-video w-full rounded-lg bg-surface-2 object-cover"
-            />
-          ) : (
-            <div className="grid aspect-video w-full place-items-center rounded-lg bg-surface-2 text-xs text-muted">
-              {t("project.noThumbnail")}
-            </div>
-          )}
-
-          <div className="grid min-w-0 gap-2">
-            <p className="truncate text-sm font-semibold text-ink">{project.title}</p>
-
-            <dl className="grid min-w-0 gap-1.5 rounded-lg bg-surface-2 p-2.5 text-xs">
-              <div className="flex min-w-0 items-baseline justify-between gap-2">
-                <dt className="shrink-0 text-muted">{t("studio.source")}</dt>
-                <dd className="min-w-0 truncate text-right font-medium text-ink">
+        <aside className="order-2 grid min-w-0 gap-4 lg:order-1 lg:sticky lg:top-24">
+          {/* La miniatura ya no se repite: es el mismo vídeo que suena al lado. */}
+          <section className="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+            <dl className="grid min-w-0 gap-3 text-sm">
+              <div className="grid gap-1">
+                <dt className="text-xs font-medium text-muted">{t("studio.source")}</dt>
+                <dd className="min-w-0 truncate font-medium text-ink">
                   {flag(sourceLanguage)} {languageLabel(locale, sourceLanguage)}
                   {sourceLanguage === "und" && (
                     <span className="ml-1 font-normal text-subtle">({t("studio.auto")})</span>
                   )}
                 </dd>
               </div>
-              <div className="flex min-w-0 items-baseline justify-between gap-2">
-                <dt className="shrink-0 text-muted">{t("studio.targets")}</dt>
-                <dd className="min-w-0 truncate text-right font-medium text-ink">
-                  {project.target_languages
-                    .map((code) => `${flag(code)} ${languageLabel(locale, code)}`)
-                    .join(" · ")}
+              <div className="grid gap-1.5">
+                <dt className="text-xs font-medium text-muted">{t("studio.targets")}</dt>
+                <dd className="flex flex-wrap gap-1.5">
+                  {project.target_languages.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setLanguage(code)}
+                      aria-pressed={code === language}
+                      className={`rounded-lg border px-2 py-1 text-xs font-medium ${
+                        code === language
+                          ? "border-accent/40 bg-accent-soft text-accent-ink"
+                          : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                      }`}
+                    >
+                      {flag(code)} {languageLabel(locale, code)}
+                    </button>
+                  ))}
                 </dd>
               </div>
             </dl>
-          </div>
+          </section>
 
           <ProcessPanel
             job={currentJob}
@@ -362,7 +373,7 @@ export function WatchStudio({
         </aside>
 
         <div className="order-1 grid min-w-0 gap-4 lg:order-2">
-          <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
             <Player
               bare
               projectId={project.id}
@@ -387,6 +398,7 @@ export function WatchStudio({
               processing={processing}
               coveredMs={languageCoveredMs}
               trackFailed={languageFailed}
+              poster={project.thumbnail_url}
             />
 
             {/* La pista vive en la misma superficie que el vídeo: vídeo,

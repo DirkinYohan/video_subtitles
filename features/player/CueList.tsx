@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { formatClock } from "@/lib/cues";
 import type { Cue } from "@/types/domain";
@@ -9,6 +10,8 @@ import type { Cue } from "@/types/domain";
  *
  * Vive fuera del reproductor para que el vídeo, el transporte y la pista de
  * tiempo formen una sola pieza, y la lista quede debajo sin romper ese bloque.
+ * La frase activa sigue a la reproducción desplazando SÓLO la lista (nunca la
+ * página): quien lee no pierde su sitio en la pantalla.
  */
 export function CueList({
   cues,
@@ -24,13 +27,31 @@ export function CueList({
   onSeek: (ms: number) => void;
 }) {
   const { t } = useI18n();
+  const listRef = useRef<HTMLOListElement>(null);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || activeIndex === null) return;
+    const item = list.querySelector<HTMLElement>("[aria-current=true]");
+    if (!item) return;
+    const top = item.offsetTop;
+    const bottom = top + item.offsetHeight;
+    if (top < list.scrollTop || bottom > list.scrollTop + list.clientHeight) {
+      list.scrollTo({ top: Math.max(0, top - list.clientHeight / 3), behavior: "smooth" });
+    }
+  }, [activeIndex]);
 
   if (cues.length === 0) return null;
 
   return (
-    <div>
-      <p className="mb-2 text-sm font-semibold text-ink">{t("player.cueList")}</p>
-      <ol className="grid max-h-72 gap-1.5 overflow-auto pr-1 sm:grid-cols-2">
+    <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+      <header className="flex items-center justify-between border-b border-line px-4 py-3">
+        <h2 className="text-sm font-semibold text-ink">{t("player.cueList")}</h2>
+        <span className="tabular rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
+          {cues.length}
+        </span>
+      </header>
+      <ol ref={listRef} className="relative max-h-80 overflow-auto p-1.5">
         {cues.map((item) => {
           const isActive = activeIndex === item.index;
           const isSelected = selectedIndex === item.index;
@@ -39,27 +60,35 @@ export function CueList({
               <button
                 type="button"
                 aria-current={isActive ? "true" : undefined}
-                className={`flex w-full gap-2.5 rounded-lg border px-2.5 py-2 text-left text-sm transition-colors ${
-                  isSelected
-                    ? "border-accent bg-accent-soft text-ink"
-                    : isActive
-                      ? "border-accent/40 bg-surface text-ink"
-                      : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                className={`relative flex w-full gap-3 rounded-xl px-3 py-2.5 text-left text-sm ${
+                  isActive
+                    ? "bg-accent-soft text-ink"
+                    : isSelected
+                      ? "bg-surface-2 text-ink"
+                      : "text-ink-2 hover:bg-surface-2 hover:text-ink"
                 }`}
                 onClick={() => {
                   onSelect(item);
                   onSeek(item.start_ms);
                 }}
               >
-                <span className="tabular shrink-0 pt-0.5 text-[0.6875rem] text-subtle">
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent transition-opacity duration-200 ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+                <span
+                  className={`tabular shrink-0 pt-px text-xs ${isActive ? "font-semibold text-accent-ink" : "text-subtle"}`}
+                >
                   {formatClock(item.start_ms)}
                 </span>
-                <span className="min-w-0 whitespace-pre-line leading-snug">{item.text}</span>
+                <span className="min-w-0 whitespace-pre-line leading-relaxed">{item.text}</span>
               </button>
             </li>
           );
         })}
       </ol>
-    </div>
+    </section>
   );
 }

@@ -40,6 +40,7 @@ export function Player({
   coveredAt,
   holdForSubtitles = false,
   trackFailed = false,
+  poster,
   bare = false,
 }: {
   projectId: string;
@@ -70,6 +71,8 @@ export function Player({
   holdForSubtitles?: boolean;
   /** La traducción al idioma elegido falló. */
   trackFailed?: boolean;
+  /** Imagen de portada mientras el vídeo no se reproduce (su miniatura). */
+  poster?: string;
   /** Sin borde ni redondeo: lo aporta el contenedor que comparte con la pista. */
   bare?: boolean;
 }) {
@@ -249,6 +252,7 @@ export function Player({
           <video
             ref={attachVideo}
             src={`/api/videos/${projectId}/media`}
+            poster={poster || undefined}
             className="aspect-video w-full object-contain"
             onLoadedMetadata={(event) => applyMetadata(event.currentTarget)}
             onTimeUpdate={(event) => {
