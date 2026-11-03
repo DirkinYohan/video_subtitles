@@ -115,7 +115,7 @@ export function AccountPanel({ user }: { user: User }) {
   const strength = password.length >= 12 ? t("auth.passwordGood") : password.length >= 8 ? t("auth.passwordFair") : password ? t("auth.passwordWeak") : "";
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-8">
+    <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-8">
       <PageHeader title={t("account.title")} description={t("account.subtitle")} />
 
       {notice && <Toast>{notice}</Toast>}

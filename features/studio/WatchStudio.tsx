@@ -277,7 +277,7 @@ export function WatchStudio({
   const processCovered = Math.max(coveredMs < timelineDuration ? coveredMs : 0, liveSourceCovered);
 
   return (
-    <div className="mx-auto grid min-w-0 max-w-7xl gap-6">
+    <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-6">
       <PageHeader
         crumbs={[{ href: "/projects", label: t("projects.title") }]}
         title={<span title={project.title}>{displayTitle(project.title)}</span>}
@@ -334,7 +334,7 @@ export function WatchStudio({
         </p>
       )}
 
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
           <Player
             bare

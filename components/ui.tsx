@@ -157,7 +157,7 @@ export function PageHeader({
   meta?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+    <header className="flex min-w-0 flex-wrap items-end justify-between gap-x-6 gap-y-4">
       {/* Base de 20rem: si no cabe con las acciones, éstas bajan de línea en
           vez de estrujar el título hasta dejar dos letras. */}
       <div className="min-w-0 flex-[1_1_20rem]">

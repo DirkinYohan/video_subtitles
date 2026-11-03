@@ -61,7 +61,7 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
 
   if (videos.length === 0) {
     return (
-      <section className="mx-auto grid max-w-6xl gap-8">
+      <section className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-8">
         <PageHeader title={t("projects.title")} description={t("projects.subtitle")} />
         <div className="relative grid place-items-center overflow-hidden rounded-3xl border border-dashed border-line-strong bg-surface px-6 py-20 text-center">
           <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 opacity-70" />
@@ -88,7 +88,7 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
   ];
 
   return (
-    <section className="mx-auto grid max-w-6xl gap-7">
+    <section className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-7">
       <PageHeader title={t("projects.title")} description={t("projects.subtitle")} actions={newButton} />
 
       <div role="group" aria-label={t("projects.filter")} className="enter-stagger grid grid-cols-2 gap-3 lg:grid-cols-4">

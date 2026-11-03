@@ -96,7 +96,7 @@ export function CreateStudio() {
   const current = steps.findIndex((step) => !step.done);
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-7">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-7">
       <PageHeader
         crumbs={[{ href: "/projects", label: t("projects.title") }]}
         title={t("upload.title")}
@@ -138,7 +138,7 @@ export function CreateStudio() {
         })}
       </ol>
 
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
         {/* --- 1. Video --- */}
         <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
           {preview ? (
