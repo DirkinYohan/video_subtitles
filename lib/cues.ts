@@ -11,7 +11,6 @@ export function cueAt(cues: Cue[], index: number): Cue | null {
   return cues.find((cue) => cue.index === index) ?? null;
 }
 
-/** Ordena por tiempo y renumera de forma contigua (1..n). */
 export function normalizeCues(cues: Cue[], language?: string): Cue[] {
   return [...cues]
     .sort((a, b) => a.start_ms - b.start_ms || a.end_ms - b.end_ms)
@@ -22,10 +21,6 @@ export function normalizeCues(cues: Cue[], language?: string): Cue[] {
     }));
 }
 
-/**
- * Resuelve solapamientos y duraciones imposibles manteniendo el orden.
- * No toca el texto: es responsabilidad del editor.
- */
 export function repairCues(cues: Cue[], minDurationMs = 300): Cue[] {
   const sorted = normalizeCues(cues);
   return sorted.map((cue, position) => {
@@ -41,7 +36,6 @@ export function cuesDuration(cues: Cue[]): number {
   return cues.reduce((max, cue) => Math.max(max, cue.end_ms), 0);
 }
 
-/** Marcas de la regla temporal, con paso "redondo" según el zoom. */
 export function rulerTicks(durationMs: number, targetCount = 10): number[] {
   if (durationMs <= 0) return [0];
   const raw = durationMs / Math.max(1, targetCount);
@@ -72,7 +66,6 @@ export function formatMs(ms: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
 }
 
-/** Convierte "mm:ss.mmm" / "hh:mm:ss.mmm" / segundos a milisegundos. */
 export function parseTimecode(value: string): number | null {
   const raw = String(value ?? "").trim().replace(",", ".");
   if (!raw) return null;
@@ -90,12 +83,6 @@ function cueKey(cue: Pick<Cue, "start_ms" | "end_ms">): string {
   return `${Math.round(cue.start_ms)}:${Math.round(cue.end_ms)}`;
 }
 
-/**
- * Añade cues nuevos (p. ej. de un evento WebSocket) sin duplicar los que ya
- * están. Un mismo cue puede llegar dos veces: por el evento y por la recarga
- * desde la API. Se identifica por su intervalo; si ya existe se conserva el
- * local (puede estar editado).
- */
 export function appendCues(current: Cue[], incoming: Cue[], language: string): Cue[] {
   const seen = new Set(current.map(cueKey));
   const fresh = incoming.filter((cue) => {
@@ -108,13 +95,6 @@ export function appendCues(current: Cue[], incoming: Cue[], language: string): C
   return normalizeCues([...current, ...fresh], language);
 }
 
-/**
- * Integra la pista que devuelve el servidor con la local.
- *
- * El servidor es la fuente de verdad hasta donde llega su respuesta; los cues
- * locales POSTERIORES a su último cue llegaron por WebSocket después de que se
- * pidiera la respuesta y no se pueden perder por una recarga más lenta.
- */
 export function mergeServerTrack(server: Cue[], local: Cue[], language: string): Cue[] {
   const serverEnd = cuesDuration(server);
   const newer = local.filter((cue) => cue.start_ms >= serverEnd);

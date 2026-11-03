@@ -5,19 +5,16 @@ export default function Loading() {
       aria-busy="true"
       aria-live="polite"
     >
-      {/* Encabezado */}
       <div className="grid gap-2">
         <div className="skeleton h-7 w-48 rounded-lg" />
         <div className="skeleton h-4 w-24 rounded-md" />
       </div>
 
-      {/* Filtros */}
       <div className="flex gap-2">
         <div className="skeleton h-11 flex-1 rounded-lg" />
         <div className="skeleton h-11 w-32 rounded-lg" />
       </div>
 
-      {/* Tarjetas con la forma del contenido real */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2].map((item) => (
           <div key={item} className="overflow-hidden rounded-2xl border border-line bg-surface">

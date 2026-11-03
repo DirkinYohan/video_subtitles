@@ -103,7 +103,6 @@ export function CreateStudio() {
         description={t("upload.subtitle")}
       />
 
-      {/* Pasos: se completan solos a medida que se avanza. */}
       <ol className="flex items-center gap-2 sm:gap-3" aria-label={t("upload.title")}>
         {steps.map((step, index) => {
           const isCurrent = index === current;
@@ -139,7 +138,6 @@ export function CreateStudio() {
       </ol>
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        {/* --- 1. Video --- */}
         <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
           {preview ? (
             <>
@@ -231,10 +229,6 @@ export function CreateStudio() {
           )}
         </section>
 
-        {/* --- 2. Idiomas y 3. Procesar --- */}
-        {/* `grid-cols-1` (minmax(0,1fr)) en cada grid: sin él la columna crece
-            hasta el ancho del nombre del archivo, que va en una sola línea, y
-            desborda la página. */}
         <aside className="grid min-w-0 grid-cols-1 gap-5 lg:sticky lg:top-24">
           <section className="grid min-w-0 grid-cols-1 gap-5 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
             <label className="grid gap-2 text-sm">

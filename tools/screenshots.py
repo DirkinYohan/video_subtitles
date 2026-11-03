@@ -1,11 +1,3 @@
-"""Captura las pantallas del frontend en Chrome real, en claro y oscuro.
-
-Uso:
-    python tools/screenshots.py [--only <ruta>] [--theme light|dark|both]
-
-Requiere el frontend en http://127.0.0.1:3000 y el backend en :8000.
-Las imágenes quedan en `data/screenshots/` para revisarlas a ojo.
-"""
 from __future__ import annotations
 
 import argparse
@@ -28,7 +20,6 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "screenshots"
 PROFILE = Path(os.environ.get("TEMP", ".")) / "ia_doblaje_shots"
 
-# Cuenta con proyecto completo y subtítulos en varios idiomas.
 EMAIL = os.environ.get("IA_E2E_EMAIL", "e2emulti1791304689@e.co")
 PASSWORD = os.environ.get("IA_E2E_PASSWORD", "password123")
 
@@ -38,8 +29,6 @@ MOBILE = (390, 844)
 
 
 def project_with_cues() -> str | None:
-    # El proyecto se puede fijar por entorno: con la base en PostgreSQL ya no
-    # hay SQLite local donde buscarlo.
     explicit = os.environ.get("IA_SHOT_PROJECT", "").strip()
     if explicit:
         return explicit
@@ -107,7 +96,6 @@ async def capture(cdp: Cdp, path: str, name: str, size: tuple[int, int], theme: 
     )
     await cdp.evaluate(f"window.location.href = {json.dumps(APP + path)}")
     await asyncio.sleep(3.2)
-    # Espera a que no haya spinners y a que terminen las peticiones en curso.
     for _ in range(12):
         busy = await cdp.evaluate(
             "document.querySelectorAll('[role=progressbar],.animate-ping,.animate-spin').length"
@@ -116,8 +104,6 @@ async def capture(cdp: Cdp, path: str, name: str, size: tuple[int, int], theme: 
             break
         await asyncio.sleep(0.8)
     await asyncio.sleep(0.6)
-    # En headless, un vídeo pausado en el primer frame no se pinta: se arranca
-    # la reproducción (y se pausa) para que la captura muestre la imagen.
     await cdp.evaluate(
         "(async () => { const v = document.querySelector('video');"
         " if (!v) return; try { await v.play(); } catch (e) {}"
@@ -205,7 +191,6 @@ async def main() -> int:
         await cdp.call("Runtime.enable")
         await cdp.call("Network.enable")
 
-        # Sesión contra el backend desde el propio origen de la app.
         await cdp.evaluate(f"window.location.href = {json.dumps(APP + '/login')}")
         await asyncio.sleep(3)
         status = await cdp.evaluate(

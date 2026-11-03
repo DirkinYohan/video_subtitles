@@ -7,10 +7,6 @@ import { formatClock } from "@/lib/cues";
 import { isActive } from "@/lib/status";
 import type { Job } from "@/types/domain";
 
-/**
- * Panel de producción: separa claramente el procesamiento en segundo plano del
- * estado de la reproducción. Muestra hasta qué minuto hay subtítulos listos.
- */
 export function ProcessPanel({
   job,
   eventsStatus,

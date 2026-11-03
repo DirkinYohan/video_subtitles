@@ -7,12 +7,6 @@ export type UploadResult = {
   duration_ms: number;
 };
 
-/**
- * Sube el vídeo con XHR para poder informar del progreso real de subida.
- *
- * Usa `FormData` con el `File` directamente: el navegador lo envía en streaming
- * (multipart), así que no se materializa el archivo entero en memoria.
- */
 export function uploadVideo(
   file: File,
   source: string,
@@ -46,7 +40,6 @@ export function uploadVideo(
         const parsed = JSON.parse(xhr.responseText) as { detail?: unknown };
         if (typeof parsed?.detail === "string" && parsed.detail.trim()) detail = parsed.detail.trim();
       } catch {
-        /* cuerpo no JSON */
       }
       reject(new ApiError(xhr.status, detail));
     };

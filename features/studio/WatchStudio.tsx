@@ -33,17 +33,11 @@ export function WatchStudio({
 }) {
   const { t, locale } = useI18n();
 
-  // --- Única fuente de verdad de los subtítulos ---------------------------
   const [currentTracks, setCurrentTracks] = useState(tracks);
   const languages = useMemo(() => Object.keys(currentTracks), [currentTracks]);
 
   const [sourceLanguage, setSourceLanguage] = useState(project.source_language || "und");
-  // Idioma elegido EXPLÍCITAMENTE por el usuario.
   const [chosenLanguage, setChosenLanguage] = useState<string | null>(null);
-  // El idioma inicial NO depende de las pistas que ya hayan llegado: antes se
-  // recalculaba en cada lote y en cuanto entraba el original (en) saltaba de
-  // «es» a «en» a mitad de reproducción, cambiando el idioma de los subtítulos
-  // sin que el usuario lo pidiera.
   const initialLanguage = useMemo(() => {
     const target = project.target_languages.find((code) => code && code !== sourceLanguage);
     return target || sourceLanguage || project.target_languages[0] || "es";
@@ -55,28 +49,20 @@ export function WatchStudio({
   const [producing, setProducing] = useState(false);
   const [produceError, setProduceError] = useState("");
 
-  // --- Tiempo de reproducción (compartido por timeline y editor) ----------
   const [timeMs, setTimeMs] = useState(0);
   const [durationMs, setDurationMs] = useState(project.duration_ms || 0);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const seekRef = useRef<(ms: number) => void>(() => undefined);
 
-  // --- Modo en vivo: activo por defecto ----------------------------------
-  // El servidor genera los subtítulos desde que termina la subida; el
-  // reproductor se engancha a ese proceso y le dice qué se está viendo para
-  // que lo prepare primero. Se puede apagar.
   const [liveEnabled, setLiveEnabled] = useState(true);
 
   const cues = currentTracks[language] || [];
   const timelineDuration = Math.max(durationMs, cuesDuration(cues), 1000);
   const activeIndex = cues[findCueIndex(cues, timeMs)]?.index ?? null;
-  // Cobertura por idioma según el servidor (sobrevive a recargas de la página).
   const [serverCoverage, setServerCoverage] = useState<Record<string, number>>({});
 
   const seek = useCallback((ms: number) => seekRef.current(ms), [seekRef]);
 
-  // Las recargas se solapan (evento, sondeo, reconexión). Una respuesta más
-  // antigua que la última aplicada se descarta en lugar de sobrescribirla.
   const loadSeq = useRef(0);
   const appliedSeq = useRef(0);
   const loadTracks = useCallback(async () => {
@@ -95,8 +81,6 @@ export function WatchStudio({
           Object.fromEntries((data.subtitles || []).map((track) => [track.language, Number(track.covered_ms ?? 0)])),
         ),
       );
-      // Se FUSIONA con lo local: una respuesta pedida antes de un evento
-      // WebSocket no puede borrar los cues que ese evento ya añadió.
       setCurrentTracks((current) => {
         const next: Record<string, Cue[]> = { ...current };
         for (const track of data.subtitles || []) {
@@ -105,7 +89,6 @@ export function WatchStudio({
         return next;
       });
     } catch {
-      /* se reintenta al siguiente evento */
     }
   }, [project.id]);
 
@@ -117,7 +100,6 @@ export function WatchStudio({
       if (data.video?.source_language) setSourceLanguage(data.video.source_language);
       if (data.video?.duration_ms) setDurationMs(data.video.duration_ms);
     } catch {
-      /* sin cambios */
     }
   }, [project.id]);
 
@@ -128,10 +110,6 @@ export function WatchStudio({
 
   const { job: currentJob, cancel, retry, refresh, setJob } = useJobProgress(job, onSettled);
 
-  // --- Respaldo sin WebSocket --------------------------------------------
-  // El progreso llega por sondeo y trae `last_cue_ms`. Cuando el servidor
-  // informa de subtítulos nuevos se recargan las pistas: así aparecen aunque
-  // el WebSocket no llegue a establecerse.
   const loadedCueMark = useRef(0);
   const cueMark = currentJob?.last_cue_ms ?? 0;
   useEffect(() => {
@@ -140,9 +118,6 @@ export function WatchStudio({
     void loadTracks();
   }, [cueMark, loadTracks]);
 
-  // --- Subtítulos en vivo por WebSocket -----------------------------------
-  // Se conecta mientras hay un job en curso: los cues llegan por evento y se
-  // añaden al reproductor sin recargar la página.
   const activeJobId = currentJob && isActive(currentJob.status) ? currentJob.id : null;
   const events = useJobEvents({
     jobId: activeJobId,
@@ -156,21 +131,16 @@ export function WatchStudio({
       void loadProject();
     },
     onSubtitles: (event) => {
-      // El idioma detectado llega con el primer lote: se refleja al momento.
       if (event.source_language && event.source_language !== "und") {
         setSourceLanguage(event.source_language);
       }
       setCurrentTracks((current) => {
-        // El evento trae TODAS las pistas del lote: se añaden todas, no sólo la
-        // seleccionada. Así cambiar de idioma es inmediato y no hay que
-        // recargar ni volver a procesar.
         const next = { ...current };
         const source = event.source_language || project.source_language || "es";
         const batches = event.cues_by_language ?? { [source]: event.cues ?? [] };
         for (const language of Object.keys(batches)) {
           const incoming = cuesFromEvent(event, language, (next[language]?.length ?? 0) + 1);
           if (incoming.length > 0) {
-            // Sin duplicar: el mismo lote puede llegar también por la recarga.
             next[language] = appendCues(next[language] ?? [], incoming, language);
           }
           console.debug(`[SUBTITLE] language=${language} +${incoming.length} (total ${next[language]?.length ?? 0})`);
@@ -180,7 +150,6 @@ export function WatchStudio({
     },
   });
 
-  // --- Botón «Producir» ----------------------------------------------------
   const produce = useCallback(
     async (mode: "progressive" | "full") => {
       setProducing(true);
@@ -216,18 +185,12 @@ export function WatchStudio({
   const readyToProduce = currentJob === null || currentJob.status === "PENDING";
   const editorLanguages = languages.length ? languages : [project.source_language || "es"];
 
-  // Hasta dónde hay subtítulos. Mientras el trabajo avanza, el reproductor no
-  // debe adelantar a esta marca; con el trabajo terminado (o inexistente) no se
-  // bloquea nada.
   const coveredMs = useMemo(() => {
     if (!processing) return timelineDuration;
     const fromJob = currentJob?.last_cue_ms ?? 0;
     return Math.max(events.coveredMs, fromJob);
   }, [processing, events.coveredMs, currentJob?.last_cue_ms, timelineDuration]);
 
-  // Cobertura del idioma ELEGIDO. Las traducciones van por detrás del
-  // original: usar la cobertura global hacía creer que un tramo ya tenía texto
-  // en el idioma elegido cuando sólo lo tenía en el original.
   const languageCoveredMs = Math.max(
     events.coverage[language] ?? 0,
     serverCoverage[language] ?? 0,
@@ -235,7 +198,6 @@ export function WatchStudio({
     processing ? 0 : cuesDuration(cues),
   );
 
-  // --- Subtítulos en vivo (cuando «Producir» no está en marcha) -----------
   const onLiveCues = useCallback((lang: string, batch: LiveCueBatch) => {
     const incoming = batch.map((cue) => ({
       index: 0,
@@ -252,8 +214,6 @@ export function WatchStudio({
     projectId: project.id,
     video: videoElement,
     language,
-    // También mientras el job está en curso: el job y el reproductor comparten
-    // el MISMO proceso del servidor, que prioriza lo que se está viendo.
     enabled: liveEnabled,
     onCues: onLiveCues,
     onSourceLanguage: setSourceLanguage,
@@ -262,16 +222,12 @@ export function WatchStudio({
 
   const languageFailed =
     events.failedLanguages.includes(language) || live.failed.includes(language);
-  // ¿Está procesado un instante en el idioma elegido? Por «Producir» (de
-  // forma continua desde 0) o por el modo en vivo (tramos sueltos).
   const liveRanges = live.coverage[language];
   const coveredAt = useCallback(
     (ms: number) => ms < languageCoveredMs || inRanges(liveRanges, ms),
     [languageCoveredMs, liveRanges],
   );
 
-  // El panel de producción mide lo preparado del ORIGINAL, venga del trabajo
-  // o del modo en vivo (que empieza por la posición del reproductor).
   const liveSourceCovered =
     (live.coverage[sourceLanguage] ?? []).find(([start]) => start <= 0)?.[1] ?? 0;
   const processCovered = Math.max(coveredMs < timelineDuration ? coveredMs : 0, liveSourceCovered);
@@ -363,8 +319,6 @@ export function WatchStudio({
             poster={project.thumbnail_url}
           />
 
-          {/* La pista vive en la misma superficie que el vídeo: vídeo,
-              transporte y subtítulos se leen como una sola pieza. */}
           <Timeline
             bare
             cues={cues}
@@ -386,8 +340,6 @@ export function WatchStudio({
           />
         </div>
 
-        {/* Panel lateral: los subtítulos siguen a la vista mientras se mira el
-            vídeo; la producción, a un clic. */}
         <aside className="grid min-w-0 gap-3 lg:sticky lg:top-24">
           <div role="tablist" aria-label={t("studio.tabs")} className="grid grid-cols-2 gap-1 rounded-xl bg-nav p-1">
             {(

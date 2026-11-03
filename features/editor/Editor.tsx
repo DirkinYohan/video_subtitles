@@ -9,12 +9,6 @@ import { languageLabel } from "@/lib/i18n";
 import { putJson } from "@/services/client";
 import type { Cue } from "@/types/domain";
 
-/**
- * Editor de subtítulos CONTROLADO.
- *
- * No guarda estado propio de los cues: el dueño es `WatchStudio`, de modo que
- * editor, timeline y reproductor comparten una única fuente de verdad.
- */
 export function Editor({
   projectId,
   cues,
@@ -223,7 +217,6 @@ export function Editor({
                 className={`absolute inset-y-0 left-0 w-[3px] bg-accent transition-opacity ${selected ? "opacity-100" : "opacity-0"}`}
               />
 
-              {/* Número y tiempos editables en línea. */}
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -293,7 +286,6 @@ export function Editor({
                 className="min-h-9 w-full resize-none rounded-lg [field-sizing:content] border border-transparent bg-transparent px-2.5 py-1.5 text-sm leading-6 text-ink placeholder:text-subtle hover:border-line hover:bg-surface focus:border-accent focus:bg-surface focus:outline-none focus:shadow-[var(--focus-ring)]"
               />
 
-              {/* Acciones: visibles al pasar el cursor o al editar la frase. */}
               <div className="flex items-center gap-0.5 transition-opacity duration-150 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
                 <IconButton
                   label={t("editor.playFrom")}

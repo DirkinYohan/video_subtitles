@@ -17,21 +17,14 @@ export type JobEvent =
   | { type: "processing_progress"; status: string; stage: string; progress: number; covered_ms?: number; duration_ms?: number }
   | {
       type: "subtitle_created";
-      /** Idioma del lote (cada idioma llega en su propio evento). */
       language?: string;
-      /** Cobertura del idioma del lote, en ms del vídeo original. */
       covered_ms: number;
-      /** Cobertura por idioma: las traducciones van por detrás del original. */
       covered_by_language?: Record<string, number>;
       duration_ms: number;
       progress: number;
-      /** Cues del idioma ORIGINAL de este lote. */
       cues: CuePayload[];
-      /** Cues por idioma: { es: [...], en: [...], fr: [...] }. */
       cues_by_language: Record<string, CuePayload[]>;
-      /** Nº total de cues persistidos por idioma. */
       totals: Record<string, number>;
-      /** Idioma original detectado/seleccionado. */
       source_language: string;
     }
   | { type: "translation_failed"; language: string; error: string }
@@ -42,14 +35,6 @@ export type JobEvent =
 
 type SubtitleCueEvent = Extract<JobEvent, { type: "subtitle_created" }>;
 
-/**
- * Eventos del job por WebSocket.
- *
- * Los subtítulos llegan por evento (`subtitle_created`) y se entregan al
- * llamante en cuanto se crean. La base de datos sigue siendo la fuente de
- * verdad: `onResync` se invoca al conectar y tras cada reconexión para
- * recuperar lo que se haya podido perder.
- */
 export function useJobEvents({
   jobId,
   onSubtitles,
@@ -66,19 +51,11 @@ export function useJobEvents({
   const [coveredMs, setCoveredMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [error, setError] = useState("");
-  // Hasta dónde está procesada cada pista (ms del vídeo) e idiomas fallidos.
   const [coverage, setCoverage] = useState<Record<string, number>>({});
   const [failedLanguages, setFailedLanguages] = useState<string[]>([]);
 
   const retryRef = useRef(1000);
 
-  // Los callbacks viven en un ref actualizado en un efecto: así el efecto de
-  // conexión NO depende de ellos y no se reconecta en cada render.
-  //
-  // Sin esto, cada `setCurrentTracks` del padre recreaba las lambdas, el efecto
-  // se limpiaba y volvía a conectar, `onResync` se disparaba en bucle y el
-  // servidor recibía un torrente de peticiones (que además dejaba al worker sin
-  // CPU). El WebSocket no llegaba a establecerse nunca.
   const handlers = useRef({ onSubtitles, onResync, onFinished });
   useEffect(() => {
     handlers.current = { onSubtitles, onResync, onFinished };
@@ -88,8 +65,6 @@ export function useJobEvents({
     let disposed = false;
     let socket: WebSocket | null = null;
     let timer = 0;
-    // Sesión rechazada: reintentar sólo repetiría "No autenticado" en bucle.
-    // El estado sigue llegando por el sondeo HTTP de `useJobProgress`.
     let stopped = false;
     const stop = (message: string) => {
       stopped = true;
@@ -100,9 +75,6 @@ export function useJobEvents({
     const open = async () => {
       if (disposed || stopped) return;
       setStatus("connecting");
-      // El WebSocket vive en el BACKEND, no en Next: los rewrites de Next sólo
-      // proxean HTTP y cierran el handshake WS. La autenticación va en un
-      // ticket pedido al mismo origen, no en la cookie (que es de host).
       const ticket = await fetchWsTicket();
       if (disposed) return;
       if (ticket === "unauthorized") {
@@ -110,8 +82,6 @@ export function useJobEvents({
         return;
       }
       if (ticket === null) {
-        // Backend no disponible (p. ej. reiniciando): se reintenta más tarde
-        // sin abrir un socket que sólo podría fallar.
         scheduleRetry();
         return;
       }
@@ -124,7 +94,6 @@ export function useJobEvents({
         setStatus("live");
         setError("");
         console.debug("[WS] connected");
-        // Recupera el estado real: el bus no guarda historial.
         handlers.current.onResync?.();
       };
 
@@ -149,8 +118,6 @@ export function useJobEvents({
             break;
           case "subtitle_created": {
             setProgress(Number(event.progress ?? 0));
-            // La cobertura global es la del original (la que va por delante):
-            // un lote de traducción, más atrasado, no la hace retroceder.
             setCoveredMs((current) => Math.max(current, Number(event.covered_ms ?? 0)));
             setDurationMs(Number(event.duration_ms ?? 0));
             {
@@ -211,7 +178,6 @@ export function useJobEvents({
       };
     };
 
-    // Reconexión con backoff; al volver se resincroniza contra la BD.
     function scheduleRetry() {
       if (disposed || stopped) return;
       setStatus("connecting");
@@ -241,7 +207,6 @@ export function useJobEvents({
     return connect(jobId);
   }, [jobId, connect]);
 
-  // Sin job el estado se DERIVA: no hace falta limpiarlo dentro de un efecto.
   return {
     status: jobId ? status : ("idle" as const),
     progress: jobId ? progress : 0,
@@ -256,14 +221,6 @@ export function useJobEvents({
 const NO_COVERAGE: Record<string, number> = {};
 const NO_LANGUAGES: string[] = [];
 
-
-/**
- * Convierte los cues de un evento en cues de dominio.
- *
- * El evento trae TODOS los idiomas del lote (`cues_by_language`), de modo que
- * el reproductor recibe a la vez la pista original y cada traducción. Si el
- * evento es antiguo y sólo trae `cues`, se usa ese idioma como respaldo.
- */
 export function cuesFromEvent(
   event: SubtitleCueEvent,
   language: string,

@@ -17,7 +17,6 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-/** Tema que se ve: el elegido o, si no hay, el del sistema. */
 function currentTheme(): Theme {
   const chosen = document.documentElement.dataset.theme;
   if (isTheme(chosen)) return chosen;
@@ -30,16 +29,8 @@ function applyTheme(theme: Theme): void {
   window.dispatchEvent(new Event(THEME_EVENT));
 }
 
-/**
- * Botón de tema claro / oscuro.
- *
- * El cambio se revela en círculo desde el propio botón (View Transitions).
- * Sin soporte del navegador, o con `prefers-reduced-motion`, cambia en el acto.
- */
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const { t } = useI18n();
-  // En el servidor no se conoce el tema del sistema: se asume claro y se
-  // corrige al hidratar, sin descuadres (sólo cambia el icono).
   const theme = useSyncExternalStore(subscribe, currentTheme, () => "light" as Theme);
   const dark = theme === "dark";
   const label = dark ? t("theme.toLight") : t("theme.toDark");
@@ -67,7 +58,6 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       title={label}
       className={`relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)] ${className}`}
     >
-      {/* Los dos iconos se cruzan: uno sale girando, el otro entra. */}
       <Icon
         name="sun"
         className={`absolute h-[1.05rem] w-[1.05rem] transition-[transform,opacity] duration-300 ease-[var(--ease-out-quart)] ${

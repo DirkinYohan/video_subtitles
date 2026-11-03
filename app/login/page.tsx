@@ -12,7 +12,6 @@ export default async function LoginPage({
 }) {
   const locale = await readLocale();
   const query = await searchParams;
-  // Al volver del enlace del correo: confirmado, ya puede entrar.
   const notice = query.verified === "1" ? translate(locale, "verify.doneLogin") : "";
   return (
     <AuthScreen locale={locale} title={translate(locale, "auth.welcome")}>

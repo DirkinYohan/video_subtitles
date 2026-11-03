@@ -20,7 +20,6 @@ export function AuthForm({
 }: {
   mode: Mode;
   token?: string;
-  /** Aviso inicial (p. ej. «correo confirmado» al volver del enlace). */
   notice?: string;
   email?: string;
 }) {
@@ -28,9 +27,7 @@ export function AuthForm({
   const { t, locale } = useI18n();
   const [error, setError] = useState("");
   const [info, setInfo] = useState(notice);
-  // Registro hecho: falta confirmar el correo antes de poder entrar.
   const [checkInbox, setCheckInbox] = useState("");
-  // Login rechazado porque el correo aún no está confirmado.
   const [unverified, setUnverified] = useState("");
   const [pending, setPending] = useState(false);
   const [show, setShow] = useState(false);
@@ -77,7 +74,6 @@ export function AuthForm({
           confirm,
           locale,
         });
-        // Sin sesión: se entra después de confirmar el correo.
         setCheckInbox(String(data.get("email") || "").trim().toLowerCase());
       } else if (mode === "forgot") {
         await postJson("/api/auth/forgot-password", { email: data.get("email"), locale });

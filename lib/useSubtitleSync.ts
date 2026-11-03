@@ -6,13 +6,6 @@ import type { Cue } from "@/types/domain";
 
 const EMPTY: SyncSnapshot = { cue: null, timeMs: 0 };
 
-/**
- * Subtítulo visible según el reloj REAL del reproductor (ver `SubtitleSync`).
- *
- * `cues` es la pista del idioma elegido: cambiarla (otro idioma, lote nuevo,
- * edición) recalcula en el acto para la posición actual, sin esperar a que el
- * vídeo avance ni volver a cargarlo.
- */
 export function useSubtitleSync(
   video: HTMLVideoElement | null,
   cues: readonly Cue[],

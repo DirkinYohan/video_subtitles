@@ -18,7 +18,6 @@ import {
 } from "@/components/classes";
 import { Icon } from "@/components/icons";
 
-// Re-export para que los Client Components sigan usando una sola ruta.
 export { buttonClass, cardClass, fieldClass };
 export type { ButtonSize, ButtonVariant };
 
@@ -33,7 +32,6 @@ export function Button({
   return <button className={`${buttonClass(variant, size)} ${className}`} {...props} />;
 }
 
-/** Botón cuadrado para controles del reproductor y de la barra superior. */
 export function IconButton({
   label,
   variant = "ghost",
@@ -76,7 +74,6 @@ export function Field({
 }) {
   return (
     <label className="grid gap-2 text-sm" htmlFor={htmlFor}>
-      {/* La etiqueta va SIEMPRE encima del campo; nunca dentro como placeholder. */}
       <span className="font-medium text-ink">{label}</span>
       {children}
       {error ? (
@@ -110,7 +107,6 @@ export function Card({
   return <Tag className={`${cardClass} p-5 sm:p-6 ${className}`}>{children}</Tag>;
 }
 
-/** Encabezado de sección: título y, si hace falta, una frase de apoyo. */
 export function SectionHeader({
   title,
   description,
@@ -135,12 +131,6 @@ export function SectionHeader({
   );
 }
 
-/**
- * Encabezado de página: el mismo en todas las pantallas internas.
- *
- * Migas (o enlace de vuelta), título grande, una frase de apoyo y las
- * acciones a la derecha. En móvil las acciones bajan bajo el título.
- */
 export function PageHeader({
   title,
   description,
@@ -151,15 +141,11 @@ export function PageHeader({
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
-  /** Ruta de vuelta: [{ href, label }] → "Proyectos / Título". */
   crumbs?: { href: string; label: string }[];
-  /** Línea secundaria bajo el título (idiomas, duración, estado…). */
   meta?: ReactNode;
 }) {
   return (
     <header className="flex min-w-0 flex-wrap items-end justify-between gap-x-6 gap-y-4">
-      {/* Base de 20rem: si no cabe con las acciones, éstas bajan de línea en
-          vez de estrujar el título hasta dejar dos letras. */}
       <div className="min-w-0 flex-[1_1_20rem]">
         {crumbs && crumbs.length > 0 && (
           <nav aria-label="breadcrumb" className="mb-2.5 flex items-center gap-1.5 text-sm text-muted">
@@ -208,7 +194,6 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
   );
 }
 
-/** Punto de estado: el mismo lenguaje visual en toda la aplicación. */
 export function StatusDot({ tone = "neutral", pulse = false }: { tone?: Tone; pulse?: boolean }) {
   const tones: Record<Tone, string> = {
     neutral: "bg-subtle",
@@ -275,7 +260,6 @@ export function Empty({
   );
 }
 
-/** Caja de aviso en línea: informa sin interrumpir. */
 export function Callout({
   tone = "neutral",
   children,
@@ -304,13 +288,6 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-/**
- * Diálogo modal accesible: cierra con Escape, atrapa el foco, bloquea el
- * scroll de fondo y devuelve el foco al elemento que lo abrió.
- *
- * Entra con un cambio de escala mínimo desde el centro: un modal no está
- * anclado a ningún disparador, así que su origen correcto es el centro.
- */
 export function Modal({
   label,
   onClose,

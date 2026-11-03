@@ -5,14 +5,6 @@ import { useI18n } from "@/components/I18nProvider";
 import { formatClock } from "@/lib/cues";
 import type { Cue } from "@/types/domain";
 
-/**
- * Lista de subtítulos del idioma elegido.
- *
- * Vive fuera del reproductor para que el vídeo, el transporte y la pista de
- * tiempo formen una sola pieza, y la lista quede debajo sin romper ese bloque.
- * La frase activa sigue a la reproducción desplazando SÓLO la lista (nunca la
- * página): quien lee no pierde su sitio en la pantalla.
- */
 export function CueList({
   cues,
   activeIndex,
@@ -27,9 +19,7 @@ export function CueList({
   selectedIndex: number | null;
   onSelect: (cue: Cue) => void;
   onSeek: (ms: number) => void;
-  /** Sin cabecera cuando ya la pone el contenedor (p. ej. una pestaña). */
   showHeader?: boolean;
-  /** Alto máximo de la lista (clase de Tailwind). */
   heightClass?: string;
 }) {
   const { t } = useI18n();

@@ -1,5 +1,3 @@
-/** Cliente HTTP del frontend. Traduce los fallos a mensajes de dominio. */
-
 import type { MessageKey } from "@/lib/i18n";
 
 export class ApiError extends Error {
@@ -14,7 +12,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Códigos conocidos del backend -> clave i18n del frontend. */
 export function errorMessageKey(error: unknown): MessageKey {
   if (error instanceof ApiError) {
     if (error.status === 401) return "error.unauthorized";
@@ -35,7 +32,6 @@ async function readDetail(response: Response): Promise<string> {
     const data = (await response.json()) as { detail?: unknown };
     if (typeof data?.detail === "string" && data.detail.trim()) return data.detail.trim();
   } catch {
-    /* cuerpo no JSON */
   }
   return response.statusText || "Error de API";
 }
@@ -50,7 +46,6 @@ async function request<T>(path: string, method: string, body?: unknown): Promise
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (caught) {
-    // Fallo de red: no hay respuesta que interpretar.
     throw new ApiError(0, caught instanceof Error ? caught.message : "network");
   }
   if (!response.ok) throw new ApiError(response.status, await readDetail(response));

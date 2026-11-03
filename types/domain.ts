@@ -15,9 +15,7 @@ export type VideoProject = {
   target_languages: string[];
   status: string;
   created_at: string;
-  /** Duración real del medio, medida con ffprobe al subir. 0 si no se pudo leer. */
   duration_ms: number;
-  /** URL de la miniatura generada, o "" si no hay. */
   thumbnail_url: string;
 };
 
@@ -38,11 +36,8 @@ export type Job = {
   stage: string;
   error: string;
   updated_at: string;
-  /** Etapas recorridas, tal como las registró el servidor. */
   stage_history?: JobStageEntry[];
-  /** `progressive` publica subtítulos mientras procesa; `full` al final. */
   mode?: ProcessingMode;
-  /** Último milisegundo de audio con subtítulos ya disponibles. */
   last_cue_ms?: number;
 };
 
@@ -51,6 +46,5 @@ export type User = {
   name: string;
   email: string;
   created_at?: string;
-  /** El correo se confirmó con el enlace enviado al registrarse. */
   email_verified?: boolean;
 };

@@ -8,7 +8,6 @@ import { readLocale } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 
-/** Muestra de subtítulos: el producto hablando de sí mismo, sin fingir una app. */
 const SPECIMEN = [
   { code: "ES", text: "Bienvenido al podcast de cinco minutos." },
   { code: "EN", text: "Welcome to the five-minute podcast." },
@@ -32,14 +31,12 @@ export default async function HomePage() {
 
   return (
     <div className="relative min-h-[100dvh] overflow-hidden bg-paper">
-      {/* Fondo: halo de la marca y una rejilla tenue que se desvanece. */}
       <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-x-0 top-0 h-[44rem]" />
       <div aria-hidden="true" className="hero-grid pointer-events-none absolute inset-x-0 top-0 h-[38rem]" />
 
       <div className="relative">
         <PublicHeader locale={locale} />
 
-        {/* --- Portada --- */}
         <main className="mx-auto grid max-w-7xl items-center gap-14 px-4 pb-20 pt-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-28 lg:pt-20">
           <div className="enter">
             <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1 text-xs font-medium text-ink-2 shadow-[var(--shadow-card)] backdrop-blur">
@@ -63,7 +60,6 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Muestra real del formato: tres idiomas del mismo cue, por turnos. */}
           <div className="enter relative" style={{ ["--enter-delay" as string]: "120ms" }}>
             <div
               aria-hidden="true"
@@ -113,7 +109,6 @@ export default async function HomePage() {
           </div>
         </main>
 
-        {/* --- Funciones --- */}
         <section className="border-t border-line bg-surface/60">
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
             <div className="max-w-2xl">
@@ -139,7 +134,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* --- Cómo funciona --- */}
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
           <h2 className="text-2xl font-semibold tracking-[-0.025em] text-ink sm:text-3xl">
             {t("home.stepsTitle")}
@@ -164,7 +158,6 @@ export default async function HomePage() {
           </ol>
         </section>
 
-        {/* --- Llamada final --- */}
         <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:pb-24">
           <div className="relative overflow-hidden rounded-3xl bg-stage px-6 py-14 text-center shadow-[var(--shadow-dialog)] sm:px-12">
             <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 opacity-90" />

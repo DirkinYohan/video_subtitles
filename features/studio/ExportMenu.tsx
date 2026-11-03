@@ -13,14 +13,6 @@ type RenderStatus = { state: Exclude<RenderState, "unavailable">; progress: numb
 const itemClass =
   "flex w-full items-start gap-3 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none";
 
-/**
- * Exportar la pista del idioma elegido.
- *
- * * Subtítulos: SRT y VTT se pueden subir tal cual a YouTube; ASS no.
- * * Vídeo: el servidor incrusta los subtítulos con FFmpeg. Se prepara en
- *   segundo plano con progreso real y se descarga al terminar; si la pista no
- *   ha cambiado desde el último render, la descarga es inmediata.
- */
 export function ExportMenu({
   projectId,
   language,
@@ -28,13 +20,11 @@ export function ExportMenu({
 }: {
   projectId: string;
   language: string;
-  /** La pista aún se está generando: el vídeo sólo incluiría lo procesado. */
   processing?: boolean;
 }) {
   const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
   const [render, setRender] = useState<{ state: RenderState; progress: number }>({ state: "idle", progress: 0 });
-  // Descargar en cuanto termine, sólo si lo pidió el usuario en esta visita.
   const wantsDownload = useRef(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -48,12 +38,10 @@ export function ExportMenu({
       const status = await getJson<RenderStatus>(`/api/videos/${projectId}/render?${query}`);
       setRender({ state: status.state, progress: status.progress });
     } catch {
-      // 404/409: este idioma aún no tiene subtítulos que incrustar.
       setRender({ state: "unavailable", progress: 0 });
     }
   }, [projectId, query]);
 
-  // Mientras se prepara, se consulta el progreso (aunque el menú esté cerrado).
   useEffect(() => {
     if (!busy) return;
     const timer = window.setInterval(() => void refresh(), 1000);
@@ -63,7 +51,6 @@ export function ExportMenu({
   useEffect(() => {
     if (render.state === "done" && wantsDownload.current) {
       wantsDownload.current = false;
-      // Un enlace de descarga: la página no se mueve del estudio.
       const link = document.createElement("a");
       link.href = fileUrl;
       link.download = "";
@@ -119,7 +106,6 @@ export function ExportMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => {
-          // Al abrir, el estado real del vídeo de este idioma.
           if (!open) void refresh();
           setOpen(!open);
         }}

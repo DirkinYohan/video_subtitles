@@ -1,23 +1,6 @@
 @import "tailwindcss";
 
-/*
- * Sistema visual de IA Doblaje
- * ============================
- *
- * Reglas que este archivo hace cumplir:
- *
- * 1. Ningún componente usa un color literal. Todo sale de estos tokens.
- * 2. Un solo acento (azul marino de tinta). Los estados semánticos
- *    (éxito / aviso / error) son familias distintas para que nunca se
- *    confundan con una acción.
- * 3. Un solo tema a la vez: claro u oscuro, elegido por el sistema y
- *    reversible con `data-theme` en <html>.
- * 4. La elevación se declara UNA vez: borde o sombra, nunca los dos.
- * 5. El movimiento usa curvas propias y respeta `prefers-reduced-motion`.
- */
-
 @theme {
-  /* --- Superficies y texto --- */
   --color-paper: var(--surface-page);
   --color-surface: var(--surface-raised);
   --color-surface-2: var(--surface-sunken);
@@ -26,20 +9,16 @@
   --color-muted: var(--text-secondary);
   --color-subtle: var(--text-tertiary);
 
-  /* --- Trazos --- */
   --color-line: var(--stroke-subtle);
   --color-line-strong: var(--stroke-strong);
 
-  /* --- Acento único --- */
   --color-accent: var(--accent-base);
   --color-accent-strong: var(--accent-pressed);
   --color-accent-soft: var(--accent-tint);
   --color-accent-softer: var(--accent-tint-strong);
   --color-accent-ink: var(--accent-text);
-  /* Texto sobre el acento: blanco en claro, tinta oscura en oscuro. */
   --color-on-accent: var(--accent-on);
 
-  /* --- Estados semánticos --- */
   --color-ok: var(--state-ok);
   --color-ok-soft: var(--state-ok-tint);
   --color-warn: var(--state-warn);
@@ -48,46 +27,31 @@
   --color-danger-soft: var(--state-danger-tint);
   --color-danger-softer: var(--state-danger-tint-strong);
 
-  /* --- Velo (siempre oscuro, para superponer sobre imagen) --- */
   --color-scrim: var(--scrim);
   --color-scrim-strong: var(--scrim-strong);
 
-  /* --- Superficie de la navegación segmentada --- */
   --color-nav: var(--nav-base);
   --color-nav-active: var(--nav-active);
 
-  /* --- Escenario (fondo de vídeo) --- */
   --color-stage: var(--stage-base);
   --color-skeleton: var(--surface-sunken);
   --color-selection: var(--accent-tint-strong);
   --color-brand-from: var(--brand-from);
   --color-brand-to: var(--brand-to);
 
-  /* --- Tipografía --- */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  /* --- Radios: una sola escala, documentada ---
-     sm  8px  → controles pequeños (badges, chips)
-     md  10px → inputs, botones compactos
-     lg  12px → botones
-     xl  14px → cards y superficies
-     2xl 20px → diálogos y el reproductor
-     Las píldoras quedan reservadas a etiquetas de estado. */
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-xl: 14px;
   --radius-2xl: 20px;
 
-  /* --- Movimiento --- */
   --ease-out-quart: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* =====================================================================
-   TEMA CLARO (por defecto)
-   ===================================================================== */
 :root {
   color-scheme: light;
 
@@ -96,13 +60,12 @@
   --surface-sunken: #eff1f7;
 
   --text-primary: #0f1222;
-  --text-secondary: #555b70; /* 6.3:1 sobre el papel */
-  --text-tertiary: #767c91;  /* 4.3:1 — solo texto grande o decorativo */
+  --text-secondary: #555b70;
+  --text-tertiary: #767c91;
 
   --stroke-subtle: #e4e6ef;
   --stroke-strong: #d0d4e2;
 
-  /* Índigo: moderno y sobrio. Blanco encima: 6.3:1. */
   --accent-base: #4f46e5;
   --accent-pressed: #4338ca;
   --accent-tint: #eef0ff;
@@ -110,8 +73,6 @@
   --accent-text: #4338ca;
   --accent-on: #ffffff;
 
-  /* Marca: degradado dentro de la MISMA familia del acento (índigo → violeta).
-     Sólo para la marca y el halo de la portada; nunca para acciones. */
   --brand-from: #6366f1;
   --brand-to: #8b5cf6;
   --glow: rgb(99 102 241 / 0.16);
@@ -131,24 +92,17 @@
   --nav-base: #eef0f6;
   --nav-active: #ffffff;
 
-  /* Sombras tintadas al papel: desplazamiento y desenfoque suaves. */
   --shadow-raise: 0 1px 2px rgb(15 18 34 / 0.05), 0 4px 12px -2px rgb(15 18 34 / 0.06);
   --shadow-card: 0 1px 2px rgb(15 18 34 / 0.04);
   --shadow-card-hover: 0 18px 40px -16px rgb(15 18 34 / 0.2), 0 4px 12px -6px rgb(15 18 34 / 0.08);
   --shadow-float: 0 12px 32px -8px rgb(15 18 34 / 0.16), 0 2px 6px -2px rgb(15 18 34 / 0.06);
   --shadow-dialog: 0 28px 72px -16px rgb(15 18 34 / 0.3), 0 4px 12px -4px rgb(15 18 34 / 0.08);
-  /* Botón principal: luz interior arriba y sombra del propio acento. */
   --shadow-button: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 1px 2px rgb(15 18 34 / 0.12),
     0 6px 16px -6px rgb(79 70 229 / 0.55);
 
   --focus-ring: 0 0 0 3px rgb(79 70 229 / 0.24);
 }
 
-/* =====================================================================
-   TEMA OSCURO
-   No es una inversión mecánica: el acento se aclara para mantener
-   contraste y las superficies se separan por luminosidad, no por borde.
-   ===================================================================== */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
@@ -203,7 +157,6 @@
   }
 }
 
-/* El usuario puede forzar el tema oscuro desde la interfaz. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
@@ -256,9 +209,6 @@
 
 }
 
-/* =====================================================================
-   BASE
-   ===================================================================== */
 * {
   box-sizing: border-box;
 }
@@ -280,17 +230,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Cifras alineadas allí donde se comparan (tiempos, contadores). */
 .tabular,
 [data-numeric] {
   font-variant-numeric: tabular-nums;
 }
 
-/* =====================================================================
-   DETALLES DE NAVEGADOR
-   Los controles nativos también llevan el diseño: selección, cursor,
-   barra de desplazamiento, anillo de foco y offset del subrayado.
-   ===================================================================== */
 ::selection {
   background: var(--accent-tint-strong);
   color: var(--text-primary);
@@ -341,10 +285,6 @@ textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* =====================================================================
-   MOVIMIENTO
-   Una sola curva para lo que entra, otra para lo que se mueve.
-   ===================================================================== */
 button,
 a,
 input,
@@ -360,7 +300,6 @@ summary {
     transform 120ms var(--ease-out-quart);
 }
 
-/* Respuesta al pulsar: escala, no desplazamiento. Se siente físico. */
 button:active:not(:disabled),
 [role="button"]:active:not([aria-disabled="true"]) {
   transform: scale(0.97);
@@ -372,9 +311,6 @@ button:active:not(:disabled),
   }
 }
 
-/* Entrada de superficies flotantes sin JavaScript.
-   `@starting-style` vive DENTRO de la regla: es el estado inicial de esa
-   misma transición, no un contenedor de selectores. */
 [data-elevated="true"] {
   opacity: 1;
   transform: scale(1);
@@ -388,15 +324,10 @@ button:active:not(:disabled),
   }
 }
 
-/* El scroll de fondo se bloquea mientras hay un diálogo abierto. */
 body[data-scroll-locked="true"] {
   overflow: hidden;
 }
 
-/* =====================================================================
-   MARCA Y PROFUNDIDAD
-   ===================================================================== */
-/* Marca: degradado de la familia del acento con luz interior. */
 .brand-mark {
   background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
   color: #fff;
@@ -412,14 +343,12 @@ body[data-scroll-locked="true"] {
   color: transparent;
 }
 
-/* Halo de la portada: dos luces difusas, sin imágenes. */
 .hero-glow {
   background:
     radial-gradient(60rem 28rem at 18% -10%, var(--glow), transparent 60%),
     radial-gradient(42rem 26rem at 92% 8%, var(--glow-2), transparent 62%);
 }
 
-/* Rejilla tenue que da textura al fondo de la portada. */
 .hero-grid {
   background-image:
     linear-gradient(to right, color-mix(in oklab, var(--stroke-subtle) 50%, transparent) 1px, transparent 1px),
@@ -428,12 +357,6 @@ body[data-scroll-locked="true"] {
   mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
 }
 
-/* =====================================================================
-   ENTRADAS
-   Lo que aparece lo hace desde abajo y con opacidad: nada surge de la nada.
-   Sólo en la carga de una pantalla (poco frecuente), nunca en acciones
-   repetidas.
-   ===================================================================== */
 @keyframes enter-up {
   from {
     opacity: 0;
@@ -483,7 +406,6 @@ body[data-scroll-locked="true"] {
   animation-delay: var(--enter-delay, 0ms);
 }
 
-/* Cascada: cada hijo entra 45 ms después del anterior (tope de 8). */
 .enter-stagger > * {
   animation: enter-up 520ms var(--ease-out-quart) both;
 }
@@ -499,7 +421,6 @@ body[data-scroll-locked="true"] {
   animation: float-soft 6s ease-in-out infinite;
 }
 
-/* Muestra de la portada: cada idioma toma el protagonismo por turnos (9 s). */
 @keyframes caption-turn {
   0%,
   30% {
@@ -534,10 +455,6 @@ body[data-scroll-locked="true"] {
   animation: playhead 9s linear infinite;
 }
 
-/* =====================================================================
-   RESPUESTA AL CURSOR
-   La tarjeta se eleva: la sombra sustituye al borde (nunca los dos).
-   ===================================================================== */
 .lift {
   transition:
     transform 240ms var(--ease-out-quart),
@@ -553,7 +470,6 @@ body[data-scroll-locked="true"] {
   }
 }
 
-/* Carga: brillo que recorre la forma del contenido. */
 .skeleton {
   background: linear-gradient(
     100deg,
@@ -565,11 +481,6 @@ body[data-scroll-locked="true"] {
   animation: shimmer 1.4s linear infinite;
 }
 
-/* =====================================================================
-   CAMBIO DE TEMA
-   El tema nuevo se revela en círculo desde el botón que lo pidió
-   (View Transitions). El origen lo fija el botón en --theme-x / --theme-y.
-   ===================================================================== */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -589,9 +500,6 @@ body[data-scroll-locked="true"] {
   }
 }
 
-/* =====================================================================
-   ACCESIBILIDAD
-   ===================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -616,7 +524,6 @@ body[data-scroll-locked="true"] {
   }
 }
 
-/* Si el usuario pide menos transparencia, el cristal se vuelve sólido. */
 @media (prefers-reduced-transparency: reduce) {
   .glass {
     background: var(--surface-raised) !important;
@@ -624,19 +531,12 @@ body[data-scroll-locked="true"] {
   }
 }
 
-/* Si pide más contraste, los bordes se afinan a un trazo definido. */
 @media (prefers-contrast: more) {
   :root {
     --stroke-subtle: var(--text-tertiary);
     --stroke-strong: var(--text-secondary);
   }
 }
-/* ---------------------------------------------------------------------------
-   Barra de progreso del reproductor
-   ---------------------------------------------------------------------------
-   Nativa pero afinada: pista fina con relleno y pulgar pequeño. El relleno se
-   calcula desde el componente con la variable --progress.
---------------------------------------------------------------------------- */
 .scrub {
   -webkit-appearance: none;
   appearance: none;

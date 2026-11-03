@@ -5,7 +5,6 @@ import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
 import { errorMessageKey, postJson } from "@/services/client";
 
-/** Pide otro enlace de confirmación para `email` (sin sesión). */
 export function ResendVerification({ email }: { email: string }) {
   const { t, locale } = useI18n();
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");

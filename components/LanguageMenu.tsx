@@ -7,10 +7,6 @@ import { Icon } from "@/components/icons";
 
 const FLAGS: Record<Locale, string> = { es: "🇪🇸", en: "🇺🇸" };
 
-/**
- * Selector de idioma como `menu` de radio: navegación con flechas, Inicio/Fin,
- * Escape para cerrar y foco devuelto al botón que lo abrió.
- */
 export function LanguageMenu({ align = "right" }: { align?: "left" | "right" }) {
   const { locale, setLocale, t } = useI18n();
   const [open, setOpen] = useState(false);

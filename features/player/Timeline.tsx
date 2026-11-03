@@ -8,14 +8,6 @@ import type { Cue } from "@/types/domain";
 
 const ZOOM_LEVELS = [1, 2, 4, 8, 16] as const;
 
-/**
- * Línea de tiempo del estudio.
- *
- * Se dibuja dentro de la misma superficie que el reproductor (`bare`), de modo
- * que vídeo, transporte y pista se leen como una sola pieza: la regla arriba,
- * la tira de miniaturas encima de los subtítulos y el cursor de reproducción
- * atravesando ambos.
- */
 export function Timeline({
   cues,
   durationMs,
@@ -34,14 +26,11 @@ export function Timeline({
   timeMs: number;
   activeIndex: number | null;
   selectedIndex: number | null;
-  /** Hasta qué ms hay subtítulos procesados (zona procesada de la pista). */
   coveredMs?: number;
   labels: { title: string; zoomIn: string; zoomOut: string; empty: string; pending?: string };
   onSeek: (ms: number) => void;
   onSelect: (cue: Cue) => void;
-  /** Sin borde ni fondo propios: lo aporta el contenedor del reproductor. */
   bare?: boolean;
-  /** Tira de miniaturas ya montada por el servidor. */
   filmstripSrc?: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -64,7 +53,6 @@ export function Timeline({
     [span],
   );
 
-  // Scrubbing global: el puntero puede salir del elemento sin perder el arrastre.
   useEffect(() => {
     if (!scrubbing) return;
     const move = (event: PointerEvent) => onSeek(positionFromEvent(event.clientX));
@@ -99,7 +87,6 @@ export function Timeline({
       }
       aria-label={labels.title}
     >
-      {/* Cabecera: nombre de la pista y zoom */}
       <div className="flex items-center gap-2 px-4 pb-1 pt-3">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-subtle">
           {labels.title}
@@ -130,7 +117,6 @@ export function Timeline({
 
       <div className="overflow-x-auto px-4 pb-4">
         <div style={{ width: `${zoom * 100}%`, minWidth: "100%" }}>
-          {/* Regla temporal */}
           <div className="relative mb-1 h-4 select-none">
             {ticks.map((tick) => (
               <span
@@ -143,7 +129,6 @@ export function Timeline({
             ))}
           </div>
 
-          {/* Pista */}
           <div
             ref={trackRef}
             role="slider"
@@ -180,7 +165,6 @@ export function Timeline({
               }
             }}
           >
-            {/* Tira de miniaturas del vídeo, encima de los subtítulos */}
             {showFilmstrip && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -193,7 +177,6 @@ export function Timeline({
               />
             )}
 
-            {/* Rejilla de la regla, dentro de la pista */}
             {ticks.map((tick) => (
               <span
                 key={tick}
@@ -203,7 +186,6 @@ export function Timeline({
               />
             ))}
 
-            {/* Zona ya procesada: lo que queda a la derecha aún no tiene subtítulos. */}
             {coveredMs > 0 && coveredMs < span && (
               <span
                 aria-hidden
@@ -241,7 +223,6 @@ export function Timeline({
               );
             })}
 
-            {/* Playhead */}
             <span
               aria-hidden
               className="pointer-events-none absolute top-0 z-30 h-full w-px bg-white/90"

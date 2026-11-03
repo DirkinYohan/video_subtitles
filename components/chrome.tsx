@@ -29,13 +29,6 @@ export function PublicHeader({ locale }: { locale: Locale }) {
   );
 }
 
-/**
- * Marco de las pantallas de autenticación.
- *
- * Dos paneles: a la izquierda el producto (escenario oscuro con el halo de la
- * marca), a la derecha la tarea. En móvil queda sólo la tarea, con la marca
- * arriba.
- */
 export function AuthScreen({
   locale,
   title,

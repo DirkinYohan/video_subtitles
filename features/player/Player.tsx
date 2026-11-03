@@ -14,7 +14,6 @@ import type { LiveStatus } from "@/lib/useLiveTrack";
 import { useSubtitleSync } from "@/lib/useSubtitleSync";
 import type { Cue } from "@/types/domain";
 
-/** Máximo que el vídeo espera a sus subtítulos antes de arrancar igualmente. */
 const MAX_HOLD_MS = 10_000;
 
 export function Player({
@@ -59,21 +58,13 @@ export function Player({
   liveEnabled: boolean;
   onLiveToggle: (next: boolean) => void;
   liveStatus: LiveStatus;
-  /** Hay un trabajo de producción en curso (independiente de la reproducción). */
   processing?: boolean;
-  /** Hasta qué ms (del vídeo) llega «Producir» en el idioma elegido. */
   coveredMs?: number;
-  /** Se están generando subtítulos (Producir o en vivo). */
   generating?: boolean;
-  /** ¿Está procesado el instante `ms` en el idioma elegido? */
   coveredAt?: (ms: number) => boolean;
-  /** Al dar play (o saltar) a un tramo sin subtítulos, esperar a que lleguen. */
   holdForSubtitles?: boolean;
-  /** La traducción al idioma elegido falló. */
   trackFailed?: boolean;
-  /** Imagen de portada mientras el vídeo no se reproduce (su miniatura). */
   poster?: string;
-  /** Sin borde ni redondeo: lo aporta el contenedor que comparte con la pista. */
   bare?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -84,9 +75,6 @@ export function Player({
   }, []);
   const { t, locale } = useI18n();
 
-  // Pantalla completa del REPRODUCTOR entero, no del <video>: los subtítulos
-  // son una capa encima y, con sólo el <video> a pantalla completa, el
-  // navegador los dejaba fuera.
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   useEffect(() => {
@@ -104,27 +92,19 @@ export function Player({
       void frame.requestFullscreen().catch(() => undefined);
       return;
     }
-    // iPhone: sólo admite pantalla completa del propio <video>.
     (videoRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null)?.webkitEnterFullscreen?.();
   }, []);
 
-  // Duración real y salvaguarda de sonido, en cuanto hay metadatos.
   const applyMetadata = useCallback(
     (video: HTMLVideoElement) => {
       const total = Math.round(video.duration * 1000);
       if (Number.isFinite(total) && total > 0) onDurationChange(total);
-      // El vídeo debe sonar siempre. Si algo lo dejó silenciado o con
-      // volumen 0, se restaura al cargar.
       video.muted = false;
       if (video.volume === 0) video.volume = 1;
     },
     [onDurationChange],
   );
 
-  // El <video> se entrega al dueño (modo en vivo) en cuanto EXISTE, no en
-  // `loadedmetadata`: con el medio en caché los metadatos se cargan antes de
-  // que React hidrate, ese evento no llega a verse y el modo en vivo se quedaba
-  // sin vídeo (no enviaba audio ni se enteraba de play, pausa o saltos).
   useEffect(() => {
     if (!element) return;
     onVideoElement(element);
@@ -150,7 +130,6 @@ export function Player({
     [onTimeChange],
   );
 
-  // Expone el seek al dueño del estado (editor y timeline) sin recrear el ref.
   useEffect(() => {
     seekRef.current = (ms: number) => seek(ms);
     return () => {
@@ -158,17 +137,8 @@ export function Player({
     };
   }, [seek, seekRef]);
 
-  // --- Subtítulo visible ----------------------------------------------------
-  // Lo decide el reloj del <video> (ver `SubtitleSync`), no `timeMs`: ese
-  // estado llega por `timeupdate` (~4 por segundo) y hacía que cada frase
-  // apareciera y desapareciera hasta 250 ms tarde.
-  //
-  // Sólo se muestra el idioma elegido. Antes, sin traducción, se mostraba el
-  // original: el usuario veía otro idioma sin haberlo pedido. Ahora se informa
-  // del estado de la pista.
   const { snapshot } = useSubtitleSync(element, cues);
   const overlay = snapshot.cue?.text || "";
-  // Instrumentación: primer subtítulo pintado (sin su contenido).
   const firstShown = useRef(false);
   useEffect(() => {
     if (!overlay || firstShown.current) return;
@@ -178,18 +148,9 @@ export function Player({
     );
   }, [overlay, snapshot.timeMs]);
 
-  // Estado de la pista elegida en el instante actual. El procesamiento NO
-  // bloquea la reproducción: si este tramo aún no está listo en este idioma se
-  // dice, y el texto aparece en cuanto llega su lote.
   const covered = coveredAt ? coveredAt(timeMs) : false;
   const state = trackState({ cueCount: cues.length, covered, generating, failed: trackFailed });
 
-  // --- Espera breve de subtítulos (como el «buffering» de un vídeo) --------
-  // Al pulsar Reproducir o saltar a un tramo que aún no tiene subtítulos en el
-  // idioma elegido, el vídeo espera a que el servidor los genere (segundos) y
-  // arranca solo. Así el primer diálogo no se pierde. Tope de MAX_HOLD_MS:
-  // pasado ese tiempo se reproduce igualmente. Durante la reproducción normal
-  // no hace falta: el servidor va por delante del cabezal.
   const [holding, setHolding] = useState(false);
   const forcePlay = useRef(false);
   const shouldHold = (video: HTMLVideoElement) =>
@@ -274,7 +235,6 @@ export function Player({
               : "overflow-hidden rounded-2xl border border-line bg-surface"
         }
       >
-        {/* --- Imagen --- */}
         <div className={fullscreen ? "relative min-h-0 flex-1 bg-stage" : "relative bg-stage"}>
           <video
             ref={attachVideo}
@@ -286,8 +246,6 @@ export function Player({
             onTimeUpdate={(event) => {
               const video = event.currentTarget;
               onTimeChange(Math.round(video.currentTime * 1000));
-              // La reproducción alcanza el final de lo preparado: se espera
-              // en vez de seguir sin subtítulos (y se retoma sola).
               if (!video.paused && shouldHold(video)) {
                 console.debug(
                   `[LIVE] espera de subtítulos en ${Math.round(video.currentTime * 1000)} ms (el vídeo alcanzó lo preparado)`,
@@ -297,7 +255,6 @@ export function Player({
               }
             }}
             onSeeked={(event) => {
-              // Posición efectiva tras el salto (la pedida puede ajustarse).
               const video = event.currentTarget;
               onTimeChange(Math.round(video.currentTime * 1000));
               if (!video.paused && shouldHold(video)) {
@@ -345,7 +302,6 @@ export function Player({
           )}
         </div>
 
-        {/* --- Barra de progreso: fina, pegada al vídeo --- */}
         <div className="relative bg-surface px-0 pb-0 pt-0">
           <input
             type="range"
@@ -364,7 +320,6 @@ export function Player({
           />
         </div>
 
-        {/* --- Transporte --- */}
         <div className="flex items-center gap-2 border-t border-line bg-surface px-2 py-2 sm:px-3">
           <div className="flex items-center gap-0.5">
             <IconButton
@@ -475,7 +430,6 @@ export function Player({
           </div>
         </div>
 
-        {/* --- Metadatos: audio, pista y tamaño --- */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface px-3 py-2 text-xs">
           <p className="min-w-0 truncate text-muted">
             {t("player.audio")}
@@ -529,7 +483,6 @@ export function Player({
           </label>
         </div>
 
-        {/* Una sola línea de estado: lo que se está preparando y hasta dónde. */}
         {(processing || (liveEnabled && liveStatus !== "off")) && (
           <p
             role="status"

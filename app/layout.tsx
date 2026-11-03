@@ -15,8 +15,6 @@ export const metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const [locale, theme] = await Promise.all([readLocale(), readTheme()]);
   return (
-    // Sin elección, sin atributo: manda el tema del sistema. El botón cambia
-    // el atributo en el cliente, de ahí suppressHydrationWarning.
     <html lang={locale} data-theme={theme ?? undefined} suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
         <I18nProvider locale={locale}>{children}</I18nProvider>

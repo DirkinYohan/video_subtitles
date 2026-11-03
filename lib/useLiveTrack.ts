@@ -9,22 +9,9 @@ export type LiveStatus = "off" | "connecting" | "live" | "complete" | "busy" | "
 export type LiveCueBatch = { start_ms: number; end_ms: number; text: string }[];
 
 const MAX_RETRY_MS = 8000;
-/** Reintentos seguidos sin conseguir conexión antes de rendirse y avisar. */
 const MAX_ATTEMPTS = 8;
-/** Cada cuánto se recuerda la posición al servidor mientras se reproduce. */
 const POSITION_EVERY_MS = 1000;
 
-/**
- * Subtítulos en vivo generados por el SERVIDOR desde el archivo de vídeo.
- *
- * Antes se capturaba el audio del <video> con Web Audio y se enviaba por el
- * socket: el subtítulo sólo podía existir después de oírse la frase (llegaba
- * siempre tarde) y el AudioWorklet no devolvía el sonido, así que al activar el
- * modo en vivo el vídeo se quedaba mudo. Ahora el navegador no toca el audio:
- * sólo informa de la posición y del idioma, y el servidor transcribe POR
- * DELANTE del cabezal. Los cues llegan con sus tiempos del vídeo original y se
- * muestran con el reloj del reproductor como cualquier pista.
- */
 export function useLiveTrack({
   projectId,
   video,
@@ -46,8 +33,6 @@ export function useLiveTrack({
   const [error, setError] = useState("");
 
   const socketRef = useRef<WebSocket | null>(null);
-  // Último evento aplicado: lo ya incluido en la instantánea o repetido tras
-  // una reconexión no se vuelve a aplicar.
   const lastSeq = useRef(-1);
   const firstCueLogged = useRef(false);
   const videoRef = useRef(video);
@@ -70,13 +55,11 @@ export function useLiveTrack({
     );
   });
 
-  // Idioma: se avisa al momento, sin reconectar.
   useEffect(() => {
     languageRef.current = language;
     sendPosition.current();
   }, [language]);
 
-  // Posición: en cada cambio del reproductor y, reproduciendo, cada segundo.
   useEffect(() => {
     videoRef.current = video;
     if (!video || !enabled) return;
@@ -93,7 +76,6 @@ export function useLiveTrack({
     };
   }, [video, enabled]);
 
-  // Conexión con reintentos.
   useEffect(() => {
     if (!enabled) return;
     let disposed = false;
@@ -107,7 +89,6 @@ export function useLiveTrack({
       if (disposed || stopped) return;
       attempts += 1;
       if (attempts > MAX_ATTEMPTS) {
-        // Sin reintentos infinitos: se informa y se deja de intentar.
         stopped = true;
         setStatus("error");
         setError("No se pudo conectar con el servidor de subtítulos.");
@@ -169,8 +150,6 @@ export function useLiveTrack({
         if (data.type === "snapshot") {
           attempts = 0;
           retry = 1000;
-          // Todo lo generado hasta ahora, idempotente: tras reconectar no se
-          // pierde ni se duplica nada (los cues se fusionan por intervalo).
           lastSeq.current = Number(data.seq ?? 0);
           for (const [lang, cues] of Object.entries(data.tracks ?? {})) {
             if (cues.length) handlers.current.onCues(lang, cues);
@@ -213,7 +192,6 @@ export function useLiveTrack({
           setFailed((current) => (current.includes(lang) ? current : [...current, lang]));
           setError(data.error || "");
         } else if (data.type === "busy") {
-          // «Producir» está en marcha: sus eventos alimentan el reproductor.
           stopped = true;
           setStatus("busy");
         } else if (data.type === "error") {

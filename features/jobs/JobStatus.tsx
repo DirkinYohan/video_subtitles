@@ -22,7 +22,6 @@ const STEPS: MessageKey[] = [
   "job.done",
 ];
 
-/** Etapa que reporta el backend -> índice de la lista visible. */
 const STAGE_STEP: Record<string, number> = {
   PENDING: 0,
   QUEUED: 0,
@@ -55,7 +54,6 @@ const STAGE_STEP: Record<string, number> = {
   GENERATING_SUBTITLES: 10,
   COMPLETED: 11,
   PARTIAL: 11,
-  // Etapas del flujo progresivo por ventanas.
   EXTRACTING_AUDIO: 1,
   ANALYZING_AUDIO: 2,
   PROCESSING_WINDOW: 4,
@@ -74,12 +72,6 @@ function stepIndex(job: Job): number {
   return 0;
 }
 
-/**
- * Paso más avanzado alcanzado según el historial del SERVIDOR.
- *
- * El sondeo puede llegar tarde y saltarse etapas cortas (VAD, subtítulos);
- * el historial persistido es la fuente fiable de lo que ya ocurrió.
- */
 function reachedStep(job: Job): number {
   let reached = stepIndex(job);
   for (const entry of job.stage_history || []) {
@@ -90,10 +82,6 @@ function reachedStep(job: Job): number {
   return reached;
 }
 
-/**
- * Panel de estado. NO sondea: recibe el job ya resuelto por `useJobProgress`,
- * de modo que existe una única fuente de progreso en toda la aplicación.
- */
 export function JobStatus({
   job,
   error,

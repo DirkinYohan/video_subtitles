@@ -79,7 +79,6 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
     );
   }
 
-  // Las métricas SON los filtros: un clic muestra sólo ese grupo.
   const stats: { key: FilterKey; label: string; icon: "folder" | "spark" | "check" | "alert"; tone: string }[] = [
     { key: "all", label: t("projects.filterAll"), icon: "folder", tone: "bg-accent-soft text-accent-ink" },
     { key: "processing", label: t("projects.filterProcessing"), icon: "spark", tone: "bg-warn-soft text-warn" },
@@ -213,7 +212,6 @@ function ProjectCard({ video }: { video: VideoProject }) {
     month: "short",
     year: "numeric",
   }).format(new Date(video.created_at));
-  // La duración viene de la API (ffprobe al subir): sin <video> oculto.
   const duration = video.duration_ms > 0 ? formatClock(video.duration_ms) : "";
 
   useEffect(() => {
@@ -288,8 +286,6 @@ function ProjectCard({ video }: { video: VideoProject }) {
                 alt=""
                 loading="lazy"
                 className="h-full w-full object-cover transition-transform duration-700 ease-[var(--ease-out-quart)] group-hover:scale-[1.05]"
-                // Si la imagen falla ANTES de hidratar, `onError` no llega a
-                // dispararse: se comprueba también al montar.
                 ref={(node) => {
                   if (node && node.complete && node.naturalWidth === 0) setThumbFailed(true);
                 }}
@@ -302,7 +298,6 @@ function ProjectCard({ video }: { video: VideoProject }) {
               <Icon name="captions" className="h-7 w-7 opacity-70" />
             </span>
           )}
-          {/* Al pasar el cursor: invitación a reproducir. */}
           <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
             <span className="grid h-12 w-12 scale-90 place-items-center rounded-full bg-white/90 text-stage shadow-[var(--shadow-float)] backdrop-blur transition-transform duration-300 ease-[var(--ease-out-quart)] group-hover:scale-100">
               <Icon name="play" className="ml-0.5 h-5 w-5" />

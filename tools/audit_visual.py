@@ -1,4 +1,3 @@
-"""Comprueba el estilo real de elementos concretos (cursiva, contraste, tamaños)."""
 import asyncio
 import json
 import os

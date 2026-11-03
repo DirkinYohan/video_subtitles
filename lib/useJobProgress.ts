@@ -6,22 +6,10 @@ import type { Job } from "@/types/domain";
 
 const POLL_MS = 1500;
 
-/**
- * Fuente ÚNICA de estado de un job.
- *
- * Un solo sondeo por job en toda la aplicación: los componentes que necesitan
- * el progreso lo reciben por props en lugar de consultar por su cuenta.
- * Se detiene en cuanto el job alcanza un estado terminal.
- *
- * `onSettled` se invoca UNA vez cuando el job termina (con éxito, parcial,
- * fallo o cancelación), para recargar subtítulos o el idioma detectado.
- */
 export function useJobProgress(initial: Job | null, onSettled?: (job: Job) => void) {
   const [job, setJob] = useState<Job | null>(initial);
   const [error, setError] = useState("");
   const [finishedAt, setFinishedAt] = useState<number | null>(null);
-  // Identidad del último job adoptado: si el servidor entrega otro objeto, se
-  // adopta. Se guarda en estado (no en un ref) para no mutar nada en render.
   const [adopted, setAdopted] = useState<Job | null>(initial);
   const [, setDoneKey] = useState("");
 
@@ -46,7 +34,6 @@ export function useJobProgress(initial: Job | null, onSettled?: (job: Job) => vo
         setJob(next);
         const key = `${next.id}:${next.status}`;
         if (!isActive(next.status)) {
-          // El guardia por clave evita notificar dos veces el mismo final.
           setDoneKey((current) => {
             if (current === key) return current;
             setFinishedAt(Date.now());
@@ -55,7 +42,6 @@ export function useJobProgress(initial: Job | null, onSettled?: (job: Job) => vo
           });
         }
       } catch {
-        // Un fallo de red no debe romper el sondeo ni la página.
         setError("network");
       }
     },

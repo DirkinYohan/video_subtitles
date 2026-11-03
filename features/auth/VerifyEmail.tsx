@@ -8,13 +8,6 @@ import { Icon } from "@/components/icons";
 import { buttonClass } from "@/components/classes";
 import { postJson } from "@/services/client";
 
-/**
- * Confirma el correo con el token del enlace y lleva al inicio de sesión.
- *
- * Se confirma con un POST desde la página y no al abrir el enlace: los
- * antivirus de correo visitan los enlaces por su cuenta y, si bastara con
- * abrirlo, lo gastarían antes de que el usuario hiciera clic.
- */
 export function VerifyEmail({ token }: { token: string }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -22,7 +15,6 @@ export function VerifyEmail({ token }: { token: string }) {
   const sent = useRef(false);
 
   useEffect(() => {
-    // Una sola vez aunque React monte el efecto dos veces en desarrollo.
     if (!token || sent.current) return;
     sent.current = true;
     postJson<{ email: string }>("/api/auth/verify-email", { token })

@@ -1,29 +1,5 @@
-/**
- * Sincronización de subtítulos con el reloj del reproductor.
- *
- * Contrato de tiempos: todo va en milisegundos ENTEROS sobre la línea temporal
- * del vídeo original. Un cue está activo en `t` cuando `start_ms <= t < end_ms`.
- *
- * La fuente de verdad es `media.currentTime`, nunca un temporizador propio ni
- * el progreso del procesamiento:
- * * reproduciendo, se lee en cada fotograma (`requestAnimationFrame`), así que
- *   un cue aparece y desaparece en su instante y no hasta 250 ms tarde, que es
- *   la cadencia de `timeupdate`;
- * * `seeking`/`seeked` recalculan en el acto para la nueva posición; lo que se
- *   mostraba antes del salto no sobrevive a él;
- * * `timeupdate` sigue escuchándose como respaldo (pestañas en segundo plano,
- *   donde el navegador congela `requestAnimationFrame`).
- *
- * Sólo se notifica cuando cambia el cue visible: el resto de la página no se
- * vuelve a pintar a 60 fps.
- *
- * El módulo no depende de React ni del DOM real: las pruebas lo ejercitan con
- * un reproductor simulado y un planificador manual.
- */
-
 import type { Cue } from "@/types/domain";
 
-/** Lo mínimo que se necesita de un `HTMLMediaElement`. */
 export type SyncMedia = {
   currentTime: number;
   paused: boolean;
@@ -39,17 +15,10 @@ export type FrameScheduler = {
 export type TimedText = Pick<Cue, "start_ms" | "end_ms" | "text">;
 
 export type SyncSnapshot = {
-  /** Cue de la pista elegida activo en el instante actual. */
   cue: Cue | null;
-  /** Instante (ms) con el que se calculó la instantánea. */
   timeMs: number;
 };
 
-/**
- * Índice del cue activo en `t`, o -1. Búsqueda binaria: la pista está ordenada
- * por inicio (`normalizeCues`) y sin solapes, así que el candidato es el último
- * cue con `start_ms <= t`.
- */
 export function findCueIndex(cues: readonly TimedText[], timeMs: number): number {
   let low = 0;
   let high = cues.length - 1;
@@ -64,8 +33,6 @@ export function findCueIndex(cues: readonly TimedText[], timeMs: number): number
     }
   }
   if (candidate < 0) return -1;
-  // Tolerancia a pistas editadas con solapes: si el candidato ya terminó se
-  // mira hacia atrás mientras algún cue anterior pudiera seguir abierto.
   for (let index = candidate; index >= 0 && index >= candidate - 2; index -= 1) {
     const cue = cues[index]!;
     if (cue.start_ms <= timeMs && timeMs < cue.end_ms) return index;
@@ -95,7 +62,6 @@ export class SubtitleSync {
     return () => this.listeners.delete(listener);
   };
 
-  /** Engancha (o desengancha, con `null`) el reproductor. */
   attach(media: SyncMedia | null): void {
     if (media === this.media) return;
     this.detach();
@@ -128,10 +94,6 @@ export class SubtitleSync {
     this.media = null;
   }
 
-  /**
-   * Pista del idioma elegido (ordenada). Cambiar de idioma o recibir cues
-   * nuevos recalcula en el acto para la posición ACTUAL del reproductor.
-   */
   setCues(cues: readonly Cue[]): void {
     if (cues === this.cues) return;
     this.cues = cues;
@@ -139,14 +101,12 @@ export class SubtitleSync {
     this.update();
   }
 
-  /** Recalcula con el reloj del reproductor. Público para pruebas y efectos. */
   update(): void {
     const media = this.media;
     const timeMs = media ? Math.max(0, Math.round(media.currentTime * 1000)) : 0;
     const cue = this.lookup(timeMs);
     const previous = this.snapshot;
     if (previous.cue === cue) {
-      // El instante no se publica por sí solo: sólo importa el cue visible.
       this.snapshot = { ...previous, timeMs };
       return;
     }
@@ -156,7 +116,6 @@ export class SubtitleSync {
 
   private lookup(timeMs: number): Cue | null {
     const cues = this.cues;
-    // Reproducción continua: casi siempre es el mismo cue o el siguiente.
     const last = this.lastIndex;
     for (const index of [last, last + 1]) {
       const cue = index >= 0 ? cues[index] : undefined;
@@ -196,19 +155,15 @@ export class SubtitleSync {
 
   private onPause = (): void => {
     this.stop();
-    // Pausado, el subtítulo queda fijado al fotograma detenido.
     this.update();
   };
 
   private onSeek = (): void => {
-    // Empieza un salto: `currentTime` ya es la posición pedida y lo que se
-    // mostraba para la posición anterior no sobrevive.
     this.lastIndex = -1;
     this.update();
   };
 
   private onSeeked = (): void => {
-    // Posición efectiva tras el salto (puede diferir de la pedida).
     this.lastIndex = -1;
     this.update();
     if (this.media && !this.media.paused) this.loop();
@@ -219,12 +174,8 @@ export class SubtitleSync {
   };
 }
 
-// --- Tramos procesados ----------------------------------------------------
-
-/** Intervalo [inicio, fin) en ms del vídeo. */
 export type TimeRange = [number, number];
 
-/** Añade un intervalo a una lista ordenada, fusionando los que se tocan. */
 export function addRange(ranges: readonly TimeRange[], range: TimeRange): TimeRange[] {
   let [start, end] = range;
   if (!(end > start)) return [...ranges];
@@ -244,23 +195,12 @@ export function inRanges(ranges: readonly TimeRange[] | undefined, timeMs: numbe
   return Boolean(ranges?.some(([a, b]) => a <= timeMs && timeMs < b));
 }
 
-// --- Estado de la pista elegida -----------------------------------------
-
 export type TrackState =
-  /** Hay subtítulos procesados para el instante actual. */
   | "ready"
-  /** Se está generando y este tramo aún no está listo en este idioma. */
   | "processing"
-  /** No hay pista en este idioma y no se está generando. */
   | "missing"
-  /** La traducción a este idioma falló. */
   | "failed";
 
-/**
- * Estado de la pista elegida en el instante actual. No confunde el progreso
- * del procesamiento con la posición del vídeo: `covered` dice si ESTE instante
- * ya está procesado EN ESTE IDIOMA.
- */
 export function trackState({
   cueCount,
   covered,
@@ -277,7 +217,6 @@ export function trackState({
   return cueCount > 0 || covered ? "ready" : "missing";
 }
 
-/** Fusiona coberturas por idioma sin retroceder nunca (eventos repetidos o tardíos). */
 export function mergeCoverage(
   current: Record<string, number>,
   incoming: Record<string, number>,
@@ -292,13 +231,6 @@ export function mergeCoverage(
   return next;
 }
 
-// --- Generación progresiva ---------------------------------------------------
-
-/**
- * ¿Debe el vídeo esperar a sus subtítulos? Sólo si se están generando en vivo,
- * los subtítulos están visibles, el usuario no ha agotado ya la espera máxima
- * y el instante actual todavía no está procesado en el idioma elegido.
- */
 export function needsSubtitleWait({
   enabled,
   captionsOn,
@@ -313,10 +245,6 @@ export function needsSubtitleWait({
   return enabled && captionsOn && !forced && !covered;
 }
 
-/**
- * ¿Es nuevo este evento? Los eventos del servidor van numerados; lo que ya
- * estaba en la instantánea o llega repetido tras reconectar se descarta.
- */
 export function isNewEvent(lastSeq: number, seq: number | undefined): boolean {
   return typeof seq !== "number" || seq > lastSeq;
 }

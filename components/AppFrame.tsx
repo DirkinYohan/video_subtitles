@@ -18,13 +18,11 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
 
   const links = [
     { href: "/projects", label: t("nav.projects"), active: pathname.startsWith("/projects") },
-    // En móvil «Cuenta» la cubre el avatar: la barra no cabe con todo.
     { href: "/account", label: t("nav.account"), active: pathname.startsWith("/account"), desktopOnly: true },
   ];
 
   return (
     <div className="min-h-[100dvh] bg-paper text-ink">
-      {/* Atajo de teclado: primera parada del tabulador. */}
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-[var(--shadow-float)]"
@@ -65,7 +63,6 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
         </div>
       </header>
 
-      {/* La clave por ruta vuelve a disparar la entrada al navegar. */}
       <main
         key={pathname}
         id="contenido"
@@ -78,7 +75,6 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
   );
 }
 
-/** Siempre a la vista: con texto desde `sm`, sólo el icono en móvil. */
 function LogoutButton() {
   const { t } = useI18n();
   const router = useRouter();
@@ -89,7 +85,6 @@ function LogoutButton() {
     try {
       await postJson("/api/auth/logout", {});
     } catch {
-      // Aunque falle la llamada, se sale igualmente: la cookie caduca sola.
     } finally {
       router.replace("/login");
       router.refresh();

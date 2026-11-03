@@ -67,7 +67,6 @@ export function AccountPanel({ user }: { user: User }) {
       });
       setEmail(data.email);
       setEmailPassword("");
-      // El cambio se aplica al confirmar la dirección nueva desde su correo.
       setNotice(data.pending_email ? t("account.emailPending", { email: data.pending_email }) : "");
       router.refresh();
     } catch (caught) {
@@ -108,7 +107,6 @@ export function AccountPanel({ user }: { user: User }) {
     try {
       await postJson("/api/auth/logout", {});
     } catch {
-      // Aunque falle la llamada, la sesión local se descarta igualmente.
       setError(t("error.offline"));
     } finally {
       setPending(null);
@@ -126,7 +124,6 @@ export function AccountPanel({ user }: { user: User }) {
       {notice && <Toast>{notice}</Toast>}
       {error && <Toast tone="danger">{error}</Toast>}
 
-      {/* --- Tarjeta de perfil --- */}
       <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
         <div aria-hidden="true" className="hero-glow h-24 bg-surface-2 sm:h-28" />
         <div className="flex flex-wrap items-end gap-4 px-5 pb-5 sm:px-6">
@@ -148,7 +145,6 @@ export function AccountPanel({ user }: { user: User }) {
       </section>
 
       <div className="grid gap-8">
-        {/* --- Perfil --- */}
         <SettingsRow title={t("account.personal")} description={t("account.personalHint")}>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <Field label={t("account.name")}>
@@ -173,7 +169,6 @@ export function AccountPanel({ user }: { user: User }) {
           </div>
         </SettingsRow>
 
-        {/* --- Correo --- */}
         <SettingsRow title={t("account.changeEmail")} description={t("account.emailHint")}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t("account.newEmail")}>
@@ -200,7 +195,6 @@ export function AccountPanel({ user }: { user: User }) {
           </div>
         </SettingsRow>
 
-        {/* --- Seguridad --- */}
         <SettingsRow title={t("account.security")} description={t("account.securityHint")}>
           <Field label={t("account.currentPassword")}>
             <TextInput
@@ -238,7 +232,6 @@ export function AccountPanel({ user }: { user: User }) {
           </div>
         </SettingsRow>
 
-        {/* --- Preferencias --- */}
         <SettingsRow title={t("account.preferences")} description={t("account.preferencesHint")}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
@@ -285,7 +278,6 @@ export function AccountPanel({ user }: { user: User }) {
   );
 }
 
-/** Fila de ajustes: título y explicación a la izquierda, formulario a la derecha. */
 function SettingsRow({
   title,
   description,

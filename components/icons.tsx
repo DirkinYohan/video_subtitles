@@ -7,13 +7,6 @@ export type IconName =
   | "plus" | "minus" | "more" | "check" | "download" | "pencil" | "trash" | "clock" | "alert" | "spark"
   | "arrowLeft" | "arrowRight" | "sun" | "moon" | "scissors" | "merge" | "logout" | "shrink";
 
-/**
- * Iconos de la interfaz.
- *
- * Una sola familia, un solo grosor de trazo (1.75) y siempre desde aquí:
- * ningún carácter Unicode ni emoji hace de icono. Todos comparten la misma
- * retícula de 24×24 para que el peso visual sea consistente.
- */
 export function Icon({ name, className = "h-5 w-5" }: { name: IconName; className?: string }) {
   return (
     <svg
