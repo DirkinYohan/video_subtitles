@@ -60,10 +60,10 @@ export function AccountPanel({ user }: { user: User }) {
     setNotice("");
     setPending("email");
     try {
-      const data = await postJson<{ email: string }>("/api/auth/change-email", { email, password: emailPassword });
+      const data = await postJson<{ email: string }>("/api/auth/change-email", { email, password: emailPassword, locale });
       setEmail(data.email);
       setEmailPassword("");
-      setNotice(t("account.emailSaved"));
+      setNotice(t("account.emailSavedVerify"));
       router.refresh();
     } catch (caught) {
       setError(t(errorMessageKey(caught)));

@@ -51,4 +51,6 @@ export type User = {
   name: string;
   email: string;
   created_at?: string;
+  /** El correo se confirmó con el enlace enviado al registrarse. */
+  email_verified?: boolean;
 };

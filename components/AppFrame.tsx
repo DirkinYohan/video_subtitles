@@ -9,6 +9,7 @@ import { LanguageMenu } from "@/components/LanguageMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { glassClass } from "@/components/classes";
 import { Wordmark } from "@/components/Wordmark";
+import { VerifyBanner } from "@/features/auth/VerifyBanner";
 import { postJson } from "@/services/client";
 import type { User } from "@/types/domain";
 
@@ -64,6 +65,8 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
           </div>
         </div>
       </header>
+
+      {user && user.email_verified === false && <VerifyBanner email={user.email} />}
 
       {/* La clave por ruta vuelve a disparar la entrada al navegar. */}
       <main

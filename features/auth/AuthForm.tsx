@@ -11,7 +11,7 @@ type Mode = "login" | "register" | "forgot" | "reset";
 
 export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [pending, setPending] = useState(false);
@@ -55,10 +55,11 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
           email: data.get("email"),
           password,
           confirm,
+          locale,
         });
         router.push("/projects");
       } else if (mode === "forgot") {
-        await postJson("/api/auth/forgot-password", { email: data.get("email") });
+        await postJson("/api/auth/forgot-password", { email: data.get("email"), locale });
         setInfo(t("auth.sent"));
       } else {
         await postJson("/api/auth/reset-password", { token, password, confirm });
