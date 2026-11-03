@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import type {
   ButtonHTMLAttributes,
@@ -15,6 +16,7 @@ import {
   type ButtonSize,
   type ButtonVariant,
 } from "@/components/classes";
+import { Icon } from "@/components/icons";
 
 // Re-export para que los Client Components sigan usando una sola ruta.
 export { buttonClass, cardClass, fieldClass };
@@ -130,6 +132,58 @@ export function SectionHeader({
       </div>
       {action}
     </div>
+  );
+}
+
+/**
+ * Encabezado de página: el mismo en todas las pantallas internas.
+ *
+ * Migas (o enlace de vuelta), título grande, una frase de apoyo y las
+ * acciones a la derecha. En móvil las acciones bajan bajo el título.
+ */
+export function PageHeader({
+  title,
+  description,
+  actions,
+  crumbs,
+  meta,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+  /** Ruta de vuelta: [{ href, label }] → "Proyectos / Título". */
+  crumbs?: { href: string; label: string }[];
+  /** Línea secundaria bajo el título (idiomas, duración, estado…). */
+  meta?: ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+      <div className="min-w-0 flex-1">
+        {crumbs && crumbs.length > 0 && (
+          <nav aria-label="breadcrumb" className="mb-2.5 flex items-center gap-1.5 text-sm text-muted">
+            {crumbs.map((crumb) => (
+              <Link
+                key={crumb.href}
+                href={crumb.href}
+                className="group inline-flex items-center gap-1.5 rounded-md font-medium hover:text-ink"
+              >
+                <Icon
+                  name="arrowLeft"
+                  className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5"
+                />
+                {crumb.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <h1 className="line-clamp-2 break-words text-2xl font-semibold sm:truncate tracking-[-0.025em] text-ink sm:text-[1.875rem] sm:leading-tight">
+          {title}
+        </h1>
+        {description && <p className="mt-1.5 max-w-[65ch] text-sm leading-6 text-muted">{description}</p>}
+        {meta && <div className="mt-2.5">{meta}</div>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </header>
   );
 }
 

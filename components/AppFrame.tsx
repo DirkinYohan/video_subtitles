@@ -16,7 +16,8 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
 
   const links = [
     { href: "/projects", label: t("nav.projects"), active: pathname.startsWith("/projects") },
-    { href: "/account", label: t("nav.account"), active: pathname.startsWith("/account") },
+    // En móvil «Cuenta» la cubre el avatar: la barra no cabe con todo.
+    { href: "/account", label: t("nav.account"), active: pathname.startsWith("/account"), desktopOnly: true },
   ];
 
   return (
@@ -42,7 +43,7 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
                 key={link.href}
                 href={link.href}
                 aria-current={link.active ? "page" : undefined}
-                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium sm:px-3.5 ${
+                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium sm:px-3.5 ${link.desktopOnly ? "hidden sm:block" : ""} ${
                   link.active
                     ? "bg-nav-active text-ink shadow-[var(--shadow-card)]"
                     : "text-muted hover:text-ink"
