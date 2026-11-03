@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
-import { Button, PageHeader, StatusDot, buttonClass } from "@/components/ui";
+import { Button, PageHeader, StatusDot } from "@/components/ui";
 import { Editor } from "@/features/editor/Editor";
 import { ProcessPanel } from "@/features/jobs/ProcessPanel";
+import { ExportMenu } from "@/features/studio/ExportMenu";
 import { CueList } from "@/features/player/CueList";
 import { Player } from "@/features/player/Player";
 import { Timeline } from "@/features/player/Timeline";
@@ -322,10 +323,7 @@ export function WatchStudio({
                 {t("process.processing")}
               </span>
             ) : null}
-            <a className={buttonClass("secondary")} href={`/api/export/${project.id}/zip`}>
-              <Icon name="download" className="h-4 w-4" />
-              {t("project.export")}
-            </a>
+            <ExportMenu key={language} projectId={project.id} language={language} processing={processing} />
           </>
         }
       />
