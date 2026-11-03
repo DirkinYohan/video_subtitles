@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IA Doblaje · frontend
 
-## Getting Started
+Aplicación web (Next.js) para subir vídeos, ver los subtítulos generados en
+vivo, editarlos y exportarlos. El backend está en el repositorio
+[IA-Doblaje](https://github.com/DirkinYohan/IA-Doblaje).
 
-First, run the development server:
+## Desarrollo local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre <http://localhost:3000>. Con el backend corriendo en el puerto 8000 no
+hace falta configurar nada (los valores por defecto están en `.env.example`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run verify
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+comprueba tipos, lint, pruebas y la compilación de producción.
 
-## Learn More
+## Desplegar en Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Importa este repositorio en <https://vercel.com/new> (Vercel detecta
+   Next.js solo).
+2. Añade una variable de entorno:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   | Variable | Valor |
+   |---|---|
+   | `NEXT_PUBLIC_API_URL` | URL pública del backend en Render, sin `/` al final |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Pulsa **Deploy**.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+La guía completa, con el backend en Render y cómo conectarlos, está en
+[DEPLOY.md del backend](https://github.com/DirkinYohan/IA-Doblaje/blob/main/DEPLOY.md).
