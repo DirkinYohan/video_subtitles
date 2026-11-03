@@ -232,8 +232,11 @@ export function CreateStudio() {
         </section>
 
         {/* --- 2. Idiomas y 3. Procesar --- */}
-        <aside className="grid min-w-0 gap-5 lg:sticky lg:top-24">
-          <section className="grid gap-5 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+        {/* `grid-cols-1` (minmax(0,1fr)) en cada grid: sin él la columna crece
+            hasta el ancho del nombre del archivo, que va en una sola línea, y
+            desborda la página. */}
+        <aside className="grid min-w-0 grid-cols-1 gap-5 lg:sticky lg:top-24">
+          <section className="grid min-w-0 grid-cols-1 gap-5 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
             <label className="grid gap-2 text-sm">
               <span className="font-medium text-ink">{t("studio.source")}</span>
               <span className="relative">
@@ -289,9 +292,9 @@ export function CreateStudio() {
             </fieldset>
           </section>
 
-          <section className="grid gap-4 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+          <section className="grid min-w-0 grid-cols-1 gap-4 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
             <h2 className="text-sm font-semibold text-ink">{t("upload.summary")}</h2>
-            <dl className="grid gap-2.5 text-sm">
+            <dl className="grid grid-cols-1 gap-2.5 text-sm">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted">{t("upload.step1")}</dt>
                 <dd className="min-w-0 truncate font-medium text-ink">{file ? displayTitle(file.name) : "—"}</dd>
