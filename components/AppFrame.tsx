@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, type ReactNode } from "react";
 import { useI18n } from "@/components/I18nProvider";
+import { Icon } from "@/components/icons";
 import { LanguageMenu } from "@/components/LanguageMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { glassClass } from "@/components/classes";
 import { Wordmark } from "@/components/Wordmark";
+import { postJson } from "@/services/client";
 import type { User } from "@/types/domain";
 
 export function AppFrame({ user, children }: { user: User | null; children: ReactNode }) {
@@ -58,6 +60,7 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
             <ThemeToggle />
             <LanguageMenu />
             <UserMenu user={user} />
+            <LogoutButton />
           </div>
         </div>
       </header>
@@ -72,6 +75,39 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
         {children}
       </main>
     </div>
+  );
+}
+
+/** Siempre a la vista: con texto desde `sm`, sólo el icono en móvil. */
+function LogoutButton() {
+  const { t } = useI18n();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  async function logout() {
+    setPending(true);
+    try {
+      await postJson("/api/auth/logout", {});
+    } catch {
+      // Aunque falle la llamada, se sale igualmente: la cookie caduca sola.
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void logout()}
+      disabled={pending}
+      title={t("user.logout")}
+      aria-label={t("user.logout")}
+      className="ml-1 flex h-10 items-center gap-2 rounded-xl border border-line px-2.5 text-sm font-medium text-ink-2 transition-colors hover:border-danger-softer hover:bg-danger-soft hover:text-danger disabled:opacity-60 sm:px-3"
+    >
+      <Icon name="logout" className="h-[18px] w-[18px]" />
+      <span className="hidden sm:inline">{t("user.logout")}</span>
+    </button>
   );
 }
 
