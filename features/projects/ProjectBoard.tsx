@@ -42,10 +42,19 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
   }, [videos, query, sort, filter]);
 
   const header = (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
-        {t("projects.title")}
-      </h1>
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-[-0.025em] text-ink sm:text-[1.75rem]">
+          {t("projects.title")}
+        </h1>
+        {videos.length > 0 && (
+          <p className="mt-1 text-sm text-muted">
+            {videos.length === 1
+              ? t("projects.countOne")
+              : t("projects.countMany", { count: videos.length })}
+          </p>
+        )}
+      </div>
       {videos.length > 0 && (
         <Link href="/projects/new" className={buttonClass()}>
           <Icon name="plus" className="h-4 w-4" />
@@ -59,13 +68,14 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
     return (
       <section className="mx-auto max-w-6xl">
         {header}
-        <div className="mt-6 grid place-items-center rounded-xl border border-dashed border-line px-6 py-20 text-center">
-          <span className="grid h-12 w-12 place-items-center rounded-xl bg-surface-2 text-ink-2">
-            <Icon name="folder" className="h-5 w-5" />
+        <div className="relative mt-8 grid place-items-center overflow-hidden rounded-3xl border border-dashed border-line-strong bg-surface px-6 py-20 text-center">
+          <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 opacity-70" />
+          <span className="brand-mark relative grid h-14 w-14 place-items-center rounded-2xl">
+            <Icon name="upload" className="h-6 w-6" />
           </span>
-          <h2 className="mt-5 text-base font-semibold text-ink">{t("projects.emptyTitle")}</h2>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-muted">{t("projects.emptyBody")}</p>
-          <Link href="/projects/new" className={`${buttonClass()} mt-6`}>
+          <h2 className="relative mt-6 text-lg font-semibold tracking-tight text-ink">{t("projects.emptyTitle")}</h2>
+          <p className="relative mt-2 max-w-sm text-sm leading-6 text-muted">{t("projects.emptyBody")}</p>
+          <Link href="/projects/new" className={`${buttonClass()} relative mt-7 min-h-11 px-5`}>
             <Icon name="plus" className="h-4 w-4" />
             {t("projects.create")}
           </Link>
@@ -78,7 +88,7 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
     <section className="mx-auto max-w-6xl">
       {header}
 
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-7 flex flex-col gap-2 sm:flex-row">
         <div className="relative min-w-0 flex-1">
           <Icon
             name="search"
@@ -124,7 +134,7 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
           <Empty>{t("projects.noMatches")}</Empty>
         </div>
       ) : (
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="enter-stagger mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((video) => (
             <ProjectCard key={video.id} video={video} />
           ))}
@@ -151,7 +161,7 @@ function SelectField({
         value={value}
         aria-label={label}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-10 w-full appearance-none rounded-md border border-line bg-surface px-3 pr-9 text-sm text-ink transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+        className="min-h-11 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface px-3.5 pr-9 text-sm text-ink shadow-[var(--shadow-card)] transition-colors hover:border-line-strong focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -245,28 +255,41 @@ function ProjectCard({ video }: { video: VideoProject }) {
   }
 
   return (
-    <li className="group relative overflow-hidden rounded-xl border border-line bg-surface transition-colors duration-200 hover:border-line-strong">
-      <div className="relative aspect-video overflow-hidden bg-surface-2">
+    <li className="lift group relative rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className="relative aspect-video overflow-hidden rounded-t-2xl bg-surface-2">
         <Link
           href={`/projects/${video.id}`}
           className="block h-full"
           aria-label={`${t("projects.open")}: ${video.title}`}
         >
           {video.thumbnail_url && !thumbFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={video.thumbnail_url}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-              onError={() => setThumbFailed(true)}
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={video.thumbnail_url}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-700 ease-[var(--ease-out-quart)] group-hover:scale-[1.05]"
+                // Si la imagen falla ANTES de hidratar, `onError` no llega a
+                // dispararse: se comprueba también al montar.
+                ref={(node) => {
+                  if (node && node.complete && node.naturalWidth === 0) setThumbFailed(true);
+                }}
+                onError={() => setThumbFailed(true)}
+              />
+              <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/0 to-black/10" />
+            </>
           ) : (
-            <span className="grid h-full w-full place-items-center bg-surface-2 text-ink-2">
-              <Icon name="play" className="h-6 w-6" />
+            <span className="grid h-full w-full place-items-center bg-gradient-to-br from-accent-soft via-surface-2 to-surface-2 text-accent-ink">
+              <Icon name="captions" className="h-7 w-7 opacity-70" />
             </span>
           )}
-          <span className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent" />
+          {/* Al pasar el cursor: invitación a reproducir. */}
+          <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <span className="grid h-12 w-12 scale-90 place-items-center rounded-full bg-white/90 text-stage shadow-[var(--shadow-float)] backdrop-blur transition-transform duration-300 ease-[var(--ease-out-quart)] group-hover:scale-100">
+              <Icon name="play" className="ml-0.5 h-5 w-5" />
+            </span>
+          </span>
         </Link>
 
         <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-md bg-scrim px-2 py-0.5 text-[0.6875rem] font-medium text-white backdrop-blur-sm">
@@ -282,7 +305,7 @@ function ProjectCard({ video }: { video: VideoProject }) {
         <div className="absolute right-2 top-2" ref={ref}>
           <button
             type="button"
-            className="grid h-8 w-8 place-items-center rounded-md bg-surface/90 text-ink shadow-[var(--shadow-raise)] backdrop-blur-sm transition-colors hover:bg-surface"
+            className="grid h-8 w-8 place-items-center rounded-lg bg-surface/90 text-ink opacity-90 shadow-[var(--shadow-raise)] backdrop-blur-sm transition-[opacity,background-color] hover:bg-surface group-hover:opacity-100"
             aria-label={t("projects.menu")}
             aria-haspopup="menu"
             aria-expanded={menu}
@@ -343,10 +366,10 @@ function ProjectCard({ video }: { video: VideoProject }) {
         </div>
       </div>
 
-      <div className="grid gap-1.5 p-3.5">
+      <div className="grid gap-2 p-4">
         <Link
           href={`/projects/${video.id}`}
-          className="truncate text-sm font-semibold tracking-tight text-ink hover:underline hover:underline-offset-4"
+          className="truncate text-[0.9375rem] font-semibold tracking-tight text-ink hover:text-accent-ink"
         >
           {video.title}
         </Link>

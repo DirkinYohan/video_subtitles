@@ -80,6 +80,8 @@
   "error.tooMany": "Demasiados intentos. Espera un momento.",
   "error.server": "El servidor falló. Inténtalo de nuevo.",
   "projects.title": "Mis proyectos",
+  "projects.countOne": "1 proyecto",
+  "projects.countMany": "{count} proyectos",
   "projects.emptyTitle": "Todavía no tienes proyectos",
   "projects.emptyBody": "Sube un video para transcribirlo, traducirlo y generar subtítulos en varios idiomas.",
   "projects.create": "Crear video",
