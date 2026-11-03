@@ -501,21 +501,16 @@ export function Player({
           </label>
         </div>
 
-        {liveEnabled && (
-          <p role="status" className="border-t border-line bg-surface px-3 py-2 text-xs text-muted">
-            {liveLabel}
-          </p>
-        )}
-
-        {processing && (
+        {/* Una sola línea de estado: lo que se está preparando y hasta dónde. */}
+        {(processing || (liveEnabled && liveStatus !== "off")) && (
           <p
             role="status"
-            className="flex flex-wrap items-center gap-2 border-t border-line bg-surface px-3 py-2 text-xs text-muted"
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line bg-surface-2/60 px-4 py-2.5 text-xs text-muted"
           >
-            <StatusDot tone="accent" pulse />
-            {t("process.backgroundShort")}
-            {typeof coveredMs === "number" && coveredMs > 0 && (
-              <span className="tabular">
+            <StatusDot tone={processing || liveStatus === "connecting" ? "accent" : liveTone} pulse={processing || liveStatus === "connecting"} />
+            <span className="font-medium text-ink-2">{processing ? t("process.backgroundShort") : liveLabel}</span>
+            {processing && typeof coveredMs === "number" && coveredMs > 0 && (
+              <span className="tabular rounded-md bg-surface px-1.5 py-0.5 font-medium text-ink-2">
                 {t("process.upTo")} {formatClock(coveredMs)}
               </span>
             )}

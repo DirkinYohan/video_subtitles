@@ -138,13 +138,11 @@
   "job.done": "Finished",
   "job.failed": "Error",
   "job.cancelled": "Cancelled",
-  "studio.back": "My projects",
   "studio.drop": "Drag your video here",
   "studio.or": "or pick a file",
   "studio.formats": "MP4, MKV, MOV, WAV, MP3, M4A · max 2 GB",
   "studio.auto": "Detect automatically",
   "studio.source": "Video language",
-  "studio.targets": "Translate subtitles into",
   "studio.start": "Start processing",
   "studio.uploading": "Uploading video…",
   "studio.preparing": "Preparing",
@@ -246,5 +244,7 @@
   "upload.summary": "Summary",
   "upload.startHint": "Preparation starts as soon as the upload ends.",
   "upload.change": "Change video",
-  "upload.into": "Translate into"
+  "upload.into": "Translate into",
+  "studio.tabs": "Project panel",
+  "editor.subtitle": "Fix the text or timing of any line and save your changes."
 }

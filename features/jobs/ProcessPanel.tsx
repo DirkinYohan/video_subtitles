@@ -44,15 +44,15 @@ export function ProcessPanel({
   const percent = job?.progress ?? 0;
 
   return (
-    <section className="grid gap-3 rounded-xl border border-line bg-surface p-3.5" aria-label={t("process.title")}>
+    <section
+      className="grid gap-4 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]"
+      aria-label={t("process.title")}
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-ink">{t("process.title")}</p>
         {active && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
-            <StatusDot
-              tone={eventsStatus === "live" ? "ok" : "warn"}
-              pulse={eventsStatus !== "live"}
-            />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-ink-2">
+            <StatusDot tone={eventsStatus === "live" ? "ok" : "warn"} pulse={eventsStatus !== "live"} />
             {eventsStatus === "live" ? t("process.live") : t("process.connecting")}
           </span>
         )}
@@ -61,7 +61,7 @@ export function ProcessPanel({
       {ready && (
         <>
           <p className="text-sm leading-6 text-muted">{t("process.readyHint")}</p>
-          <Button type="button" onClick={onProduce}>
+          <Button type="button" className="min-h-11" onClick={onProduce}>
             <Icon name="spark" className="h-4 w-4" />
             {t("process.produce")}
           </Button>
@@ -70,48 +70,59 @@ export function ProcessPanel({
 
       {active && (
         <>
-          <Progress value={percent} label={t("process.title")} />
-
-          <dl className="grid gap-1.5 text-xs">
+          <div className="grid gap-2.5">
             <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-muted">{t("process.processed")}</dt>
-              <dd className="tabular font-medium text-ink">
+              <span className="tabular text-3xl font-semibold tracking-tight text-ink">{percent}%</span>
+              <span className="tabular text-xs font-medium text-muted">
                 {formatClock(covered)} / {total > 0 ? formatClock(total) : "--:--"}
-              </dd>
+              </span>
             </div>
-            <div className="flex items-baseline justify-between gap-2">
+            <Progress value={percent} label={t("process.title")} />
+          </div>
+
+          <dl className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl bg-surface-2 px-3 py-2.5">
+              <dt className="text-muted">{t("process.processed")}</dt>
+              <dd className="tabular mt-0.5 text-sm font-semibold text-ink">{formatClock(covered)}</dd>
+            </div>
+            <div className="rounded-xl bg-surface-2 px-3 py-2.5">
               <dt className="text-muted">{t("process.available")}</dt>
-              <dd className="tabular font-medium text-ink">
-                {covered > 0
-                  ? `${t("process.upTo")} ${formatClock(covered)}`
-                  : t("process.noneYet")}
+              <dd className="tabular mt-0.5 truncate text-sm font-semibold text-ink">
+                {covered > 0 ? `${t("process.upTo")} ${formatClock(covered)}` : t("process.noneYet")}
               </dd>
             </div>
           </dl>
 
-          <p className="text-xs leading-5 text-subtle">{t("process.background")}</p>
+          <p className="flex items-start gap-2 text-xs leading-5 text-muted">
+            <Icon name="clock" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-subtle" />
+            {t("process.background")}
+          </p>
 
-          <Button type="button" variant="secondary" size="sm" onClick={() => void onCancel()}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => void onCancel()}>
             {t("job.cancel")}
           </Button>
         </>
       )}
 
       {finished && (
-        <div className="grid gap-0.5">
-          <p role="status" className="flex items-center gap-2 text-sm font-medium text-ok">
-            <Icon name="check" className="h-4 w-4 shrink-0" />
-            <span className="min-w-0 truncate">{t("process.completed")}</span>
-          </p>
-          <p className="tabular pl-6 text-xs text-subtle">
-            {job?.stage_history?.length ?? 0} {t("process.stages")}
-          </p>
+        <div className="flex items-center gap-3 rounded-xl bg-ok-soft px-3.5 py-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ok text-white">
+            <Icon name="check" className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p role="status" className="truncate text-sm font-semibold text-ok">
+              {t("process.completed")}
+            </p>
+            <p className="tabular text-xs text-ok/80">
+              {job?.stage_history?.length ?? 0} {t("process.stages")}
+            </p>
+          </div>
         </div>
       )}
 
       {failed && (
         <>
-          <p role="alert" className="flex items-start gap-2 text-sm leading-6 text-danger">
+          <p role="alert" className="flex items-start gap-2.5 rounded-xl bg-danger-soft px-3.5 py-3 text-sm leading-6 text-danger">
             <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0" />
             <span className="min-w-0">
               {status === "CANCELLED" ? t("job.cancelled") : t("process.failed")}
@@ -130,7 +141,7 @@ export function ProcessPanel({
       )}
 
       {eventsError && (
-        <p role="alert" className="text-xs leading-5 text-warn">
+        <p role="alert" className="rounded-lg bg-warn-soft px-3 py-2 text-xs leading-5 text-warn">
           {eventsError}
         </p>
       )}

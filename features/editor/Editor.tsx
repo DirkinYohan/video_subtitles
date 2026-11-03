@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
-import { Button, Empty, SelectInput, TextInput, Toast } from "@/components/ui";
+import { Button, Empty, IconButton, SelectInput, TextInput, Toast } from "@/components/ui";
 import { formatMs, normalizeCues, parseTimecode, repairCues } from "@/lib/cues";
 import { languageLabel } from "@/lib/i18n";
 import { putJson } from "@/services/client";
@@ -133,31 +133,40 @@ export function Editor({
     }
   }
 
+  const timeField =
+    "tabular h-7 w-[5.75rem] rounded-md border border-transparent bg-transparent px-1.5 text-xs text-ink-2 " +
+    "hover:border-line hover:bg-surface focus:border-accent focus:bg-surface focus:text-ink focus:outline-none focus:shadow-[var(--focus-ring)]";
+
   return (
-    <div className="grid min-w-0 gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-ink">{t("editor.title")}</h2>
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="mr-1 text-xs text-subtle">{t("project.export")}</span>
-          {["srt", "vtt", "ass"].map((kind) => (
+    <section className="grid min-w-0 gap-5 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold tracking-tight text-ink">{t("editor.title")}</h2>
+          <p className="mt-1 text-sm text-muted">{t("editor.subtitle")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-subtle">{t("project.export")}</span>
+          <div className="flex items-center rounded-lg border border-line bg-surface p-0.5 shadow-[var(--shadow-card)]">
+            {["srt", "vtt", "ass"].map((kind) => (
+              <a
+                key={kind}
+                className="rounded-md px-2.5 py-1 text-xs font-semibold text-ink-2 hover:bg-surface-2 hover:text-ink"
+                href={`/api/export/${projectId}/${kind}?lang=${language}`}
+              >
+                {kind.toUpperCase()}
+              </a>
+            ))}
             <a
-              key={kind}
-              className="rounded-md px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
-              href={`/api/export/${projectId}/${kind}?lang=${language}`}
+              className="rounded-md px-2.5 py-1 text-xs font-semibold text-ink-2 hover:bg-surface-2 hover:text-ink"
+              href={`/api/export/${projectId}/zip`}
             >
-              {kind.toUpperCase()}
+              ZIP
             </a>
-          ))}
-          <a
-            className="rounded-md px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
-            href={`/api/export/${projectId}/zip`}
-          >
-            ZIP
-          </a>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[10rem_minmax(10rem,1fr)_auto_auto]">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[11rem_minmax(10rem,1fr)_auto_auto]">
         <SelectInput
           value={language}
           aria-label={t("player.subtitles")}
@@ -173,22 +182,23 @@ export function Editor({
         <div className="relative">
           <Icon
             name="search"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
           />
           <TextInput
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("editor.search")}
             aria-label={t("editor.search")}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
 
-        <Button type="button" variant="secondary" onClick={add}>
+        <Button type="button" variant="secondary" className="min-h-11" onClick={add}>
           <Icon name="plus" className="h-4 w-4" />
           {t("editor.create")}
         </Button>
-        <Button type="button" disabled={pending || cues.length === 0} onClick={() => void save()}>
+        <Button type="button" className="min-h-11" disabled={pending || cues.length === 0} onClick={() => void save()}>
+          <Icon name="check" className="h-4 w-4" />
           {pending ? t("auth.loading") : t("editor.save")}
         </Button>
       </div>
@@ -197,38 +207,43 @@ export function Editor({
       {error && <Toast tone="danger">{error}</Toast>}
       {visible.length === 0 && <Empty>{t("editor.empty")}</Empty>}
 
-      <ul className="grid gap-2">
-        {visible.map((cue) => (
-          <li
-            key={`${cue.index}-${cue.start_ms}`}
-            className={`grid min-w-0 gap-3 rounded-lg border p-3 md:grid-cols-[11rem_minmax(0,1fr)] ${
-              selectedIndex === cue.index
-                ? "border-accent bg-accent-soft/50"
-                : "border-line bg-surface"
-            }`}
-            onFocusCapture={() => onSelect(cue)}
-          >
-            <div className="text-sm">
-              <button
-                type="button"
-                className="tabular font-medium text-ink-2 underline-offset-2 hover:text-ink hover:underline"
-                onClick={() => {
-                  onSelect(cue);
-                  onSeek?.(cue.start_ms);
-                }}
-              >
-                {formatMs(cue.start_ms)} → {formatMs(cue.end_ms)}
-              </button>
+      <ol className="grid divide-y divide-line overflow-hidden rounded-xl border border-line">
+        {visible.map((cue, position) => {
+          const selected = selectedIndex === cue.index;
+          return (
+            <li
+              key={`${cue.index}-${cue.start_ms}`}
+              className={`group relative grid min-w-0 gap-2 px-3.5 py-2.5 transition-colors duration-150 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3 ${
+                selected ? "bg-accent-soft/60" : "bg-surface hover:bg-surface-2/60"
+              }`}
+              onFocusCapture={() => onSelect(cue)}
+            >
+              <span
+                aria-hidden="true"
+                className={`absolute inset-y-0 left-0 w-[3px] bg-accent transition-opacity ${selected ? "opacity-100" : "opacity-0"}`}
+              />
 
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                <label className="grid gap-1 text-[0.6875rem] font-medium text-subtle">
-                  {t("editor.start")}
+              {/* Número y tiempos editables en línea. */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="tabular inline-flex w-fit items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-semibold text-subtle hover:bg-surface-2 hover:text-ink"
+                  onClick={() => {
+                    onSelect(cue);
+                    onSeek?.(cue.start_ms);
+                  }}
+                  title={t("editor.playFrom")}
+                >
+                  #{position + 1}
+                </button>
+                <label className="flex items-center gap-1">
+                  <span className="sr-only">{t("editor.start")}</span>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={startDraft[cue.index] ?? formatMs(cue.start_ms)}
                     aria-label={t("editor.start")}
-                    className="tabular min-h-8 w-full rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+                    className={timeField}
                     onChange={(event) =>
                       setStartDraft((current) => ({ ...current, [cue.index]: event.target.value }))
                     }
@@ -243,14 +258,17 @@ export function Editor({
                     }}
                   />
                 </label>
-                <label className="grid gap-1 text-[0.6875rem] font-medium text-subtle">
-                  {t("editor.end")}
+                <label className="flex items-center gap-1">
+                  <span aria-hidden="true" className="text-xs text-subtle">
+                    →
+                  </span>
+                  <span className="sr-only">{t("editor.end")}</span>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={endDraft[cue.index] ?? formatMs(cue.end_ms)}
                     aria-label={t("editor.end")}
-                    className="tabular min-h-8 w-full rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+                    className={timeField}
                     onChange={(event) =>
                       setEndDraft((current) => ({ ...current, [cue.index]: event.target.value }))
                     }
@@ -266,49 +284,45 @@ export function Editor({
                   />
                 </label>
               </div>
-            </div>
 
-            <div className="min-w-0">
               <textarea
                 value={cue.text}
+                rows={1}
                 aria-label={formatMs(cue.start_ms)}
                 onChange={(event) => update(cue.index, { text: event.target.value })}
-                className="min-h-24 w-full resize-y rounded-md border border-line bg-surface p-2.5 text-sm leading-6 text-ink placeholder:text-subtle focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)]"
+                className="min-h-9 w-full resize-none rounded-lg [field-sizing:content] border border-transparent bg-transparent px-2.5 py-1.5 text-sm leading-6 text-ink placeholder:text-subtle hover:border-line hover:bg-surface focus:border-accent focus:bg-surface focus:outline-none focus:shadow-[var(--focus-ring)]"
               />
-              <div className="mt-1.5 flex flex-wrap items-center gap-0.5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+
+              {/* Acciones: visibles al pasar el cursor o al editar la frase. */}
+              <div className="flex items-center gap-0.5 transition-opacity duration-150 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
+                <IconButton
+                  label={t("editor.playFrom")}
+                  className="!h-8 !w-8"
                   onClick={() => {
                     onSelect(cue);
                     onSeek?.(cue.start_ms);
                   }}
                 >
                   <Icon name="play" className="h-3.5 w-3.5" />
-                  {t("editor.playFrom")}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => split(cue)}>
-                  {t("editor.split")}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => merge(cue)}>
-                  {t("editor.merge")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="ml-auto text-danger hover:bg-danger-soft hover:text-danger"
+                </IconButton>
+                <IconButton label={t("editor.split")} className="!h-8 !w-8" onClick={() => split(cue)}>
+                  <Icon name="scissors" className="h-3.5 w-3.5" />
+                </IconButton>
+                <IconButton label={t("editor.merge")} className="!h-8 !w-8" onClick={() => merge(cue)}>
+                  <Icon name="merge" className="h-3.5 w-3.5" />
+                </IconButton>
+                <IconButton
+                  label={t("editor.delete")}
+                  className="!h-8 !w-8 hover:!bg-danger-soft hover:!text-danger"
                   onClick={() => remove(cue.index)}
                 >
                   <Icon name="trash" className="h-3.5 w-3.5" />
-                  {t("editor.delete")}
-                </Button>
+                </IconButton>
               </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

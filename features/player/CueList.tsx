@@ -19,12 +19,18 @@ export function CueList({
   selectedIndex,
   onSelect,
   onSeek,
+  showHeader = true,
+  heightClass = "max-h-80",
 }: {
   cues: Cue[];
   activeIndex: number | null;
   selectedIndex: number | null;
   onSelect: (cue: Cue) => void;
   onSeek: (ms: number) => void;
+  /** Sin cabecera cuando ya la pone el contenedor (p. ej. una pestaña). */
+  showHeader?: boolean;
+  /** Alto máximo de la lista (clase de Tailwind). */
+  heightClass?: string;
 }) {
   const { t } = useI18n();
   const listRef = useRef<HTMLOListElement>(null);
@@ -45,13 +51,15 @@ export function CueList({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
-      <header className="flex items-center justify-between border-b border-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-ink">{t("player.cueList")}</h2>
-        <span className="tabular rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
-          {cues.length}
-        </span>
-      </header>
-      <ol ref={listRef} className="relative max-h-80 overflow-auto p-1.5">
+      {showHeader && (
+        <header className="flex items-center justify-between border-b border-line px-4 py-3">
+          <h2 className="text-sm font-semibold text-ink">{t("player.cueList")}</h2>
+          <span className="tabular rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">
+            {cues.length}
+          </span>
+        </header>
+      )}
+      <ol ref={listRef} className={`relative overflow-auto p-1.5 ${heightClass}`}>
         {cues.map((item) => {
           const isActive = activeIndex === item.index;
           const isSelected = selectedIndex === item.index;
