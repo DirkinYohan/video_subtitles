@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
-import { Badge, Button, Empty, Modal, TextInput, Toast, buttonClass } from "@/components/ui";
+import { Badge, Button, Empty, Modal, PageHeader, TextInput, Toast, buttonClass } from "@/components/ui";
+import { displayTitle } from "@/lib/format";
 import { formatClock } from "@/lib/cues";
 import { flag } from "@/lib/languages";
 import { languageLabel } from "@/lib/i18n";
@@ -25,50 +26,44 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
   const [sort, setSort] = useState<SortKey>("recent");
   const [filter, setFilter] = useState<FilterKey>("all");
 
+  const counts = useMemo(
+    () => ({
+      all: videos.length,
+      processing: videos.filter((v) => !DONE.has(v.status) && !FAILED.has(v.status)).length,
+      done: videos.filter((v) => DONE.has(v.status)).length,
+      failed: videos.filter((v) => FAILED.has(v.status)).length,
+    }),
+    [videos],
+  );
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const filtered = videos.filter((video) => {
-      if (needle && !video.title.toLowerCase().includes(needle)) return false;
+      if (needle && !displayTitle(video.title).toLowerCase().includes(needle)) return false;
       if (filter === "processing") return !DONE.has(video.status) && !FAILED.has(video.status);
       if (filter === "done") return DONE.has(video.status);
       if (filter === "failed") return FAILED.has(video.status);
       return true;
     });
     const sorted = [...filtered];
-    if (sort === "title") sorted.sort((a, b) => a.title.localeCompare(b.title));
+    if (sort === "title") sorted.sort((a, b) => displayTitle(a.title).localeCompare(displayTitle(b.title)));
     else if (sort === "duration") sorted.sort((a, b) => (b.duration_ms || 0) - (a.duration_ms || 0));
     else sorted.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
     return sorted;
   }, [videos, query, sort, filter]);
 
-  const header = (
-    <div className="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.025em] text-ink sm:text-[1.75rem]">
-          {t("projects.title")}
-        </h1>
-        {videos.length > 0 && (
-          <p className="mt-1 text-sm text-muted">
-            {videos.length === 1
-              ? t("projects.countOne")
-              : t("projects.countMany", { count: videos.length })}
-          </p>
-        )}
-      </div>
-      {videos.length > 0 && (
-        <Link href="/projects/new" className={buttonClass()}>
-          <Icon name="plus" className="h-4 w-4" />
-          {t("projects.new")}
-        </Link>
-      )}
-    </div>
+  const newButton = (
+    <Link href="/projects/new" className={`${buttonClass()} min-h-11 px-5`}>
+      <Icon name="plus" className="h-4 w-4" />
+      {t("projects.new")}
+    </Link>
   );
 
   if (videos.length === 0) {
     return (
-      <section className="mx-auto max-w-6xl">
-        {header}
-        <div className="relative mt-8 grid place-items-center overflow-hidden rounded-3xl border border-dashed border-line-strong bg-surface px-6 py-20 text-center">
+      <section className="mx-auto grid max-w-6xl gap-8">
+        <PageHeader title={t("projects.title")} description={t("projects.subtitle")} />
+        <div className="relative grid place-items-center overflow-hidden rounded-3xl border border-dashed border-line-strong bg-surface px-6 py-20 text-center">
           <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 opacity-70" />
           <span className="brand-mark relative grid h-14 w-14 place-items-center rounded-2xl">
             <Icon name="upload" className="h-6 w-6" />
@@ -84,15 +79,52 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
     );
   }
 
-  return (
-    <section className="mx-auto max-w-6xl">
-      {header}
+  // Las métricas SON los filtros: un clic muestra sólo ese grupo.
+  const stats: { key: FilterKey; label: string; icon: "folder" | "spark" | "check" | "alert"; tone: string }[] = [
+    { key: "all", label: t("projects.filterAll"), icon: "folder", tone: "bg-accent-soft text-accent-ink" },
+    { key: "processing", label: t("projects.filterProcessing"), icon: "spark", tone: "bg-warn-soft text-warn" },
+    { key: "done", label: t("projects.filterDone"), icon: "check", tone: "bg-ok-soft text-ok" },
+    { key: "failed", label: t("projects.filterFailed"), icon: "alert", tone: "bg-danger-soft text-danger" },
+  ];
 
-      <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+  return (
+    <section className="mx-auto grid max-w-6xl gap-7">
+      <PageHeader title={t("projects.title")} description={t("projects.subtitle")} actions={newButton} />
+
+      <div role="group" aria-label={t("projects.filter")} className="enter-stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((stat) => {
+          const active = filter === stat.key;
+          return (
+            <button
+              key={stat.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setFilter(active && stat.key !== "all" ? "all" : stat.key)}
+              className={`group flex items-center gap-3.5 rounded-2xl border bg-surface p-4 text-left shadow-[var(--shadow-card)] transition-[border-color,box-shadow,transform] duration-200 ${
+                active
+                  ? "border-accent/50 shadow-[var(--focus-ring)]"
+                  : "border-line hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[var(--shadow-card-hover)]"
+              }`}
+            >
+              <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${stat.tone}`}>
+                <Icon name={stat.icon} className="h-[1.125rem] w-[1.125rem]" />
+              </span>
+              <span className="min-w-0">
+                <span className="tabular block text-2xl font-semibold leading-none tracking-tight text-ink">
+                  {counts[stat.key]}
+                </span>
+                <span className="mt-1.5 block truncate text-xs font-medium text-muted">{stat.label}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative min-w-0 flex-1">
           <Icon
             name="search"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
           />
           <TextInput
             type="search"
@@ -100,22 +132,10 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("projects.search")}
             aria-label={t("projects.search")}
-            className="pl-9"
+            className="pl-10"
           />
         </div>
-
-        <div className="grid grid-cols-2 gap-2 sm:contents">
-          <SelectField
-            label={t("projects.filter")}
-            value={filter}
-            onChange={(value) => setFilter(value as FilterKey)}
-            options={[
-              { value: "all", label: t("projects.filterAll") },
-              { value: "processing", label: t("projects.filterProcessing") },
-              { value: "done", label: t("projects.filterDone") },
-              { value: "failed", label: t("projects.filterFailed") },
-            ]}
-          />
+        <div className="sm:w-52">
           <SelectField
             label={t("projects.sort")}
             value={sort}
@@ -130,11 +150,9 @@ export function ProjectBoard({ videos }: { videos: VideoProject[] }) {
       </div>
 
       {visible.length === 0 ? (
-        <div className="mt-6">
-          <Empty>{t("projects.noMatches")}</Empty>
-        </div>
+        <Empty>{t("projects.noMatches")}</Empty>
       ) : (
-        <ul className="enter-stagger mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul key={`${filter}-${sort}`} className="enter-stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((video) => (
             <ProjectCard key={video.id} video={video} />
           ))}
@@ -260,7 +278,7 @@ function ProjectCard({ video }: { video: VideoProject }) {
         <Link
           href={`/projects/${video.id}`}
           className="block h-full"
-          aria-label={`${t("projects.open")}: ${video.title}`}
+          aria-label={`${t("projects.open")}: ${displayTitle(video.title)}`}
         >
           {video.thumbnail_url && !thumbFailed ? (
             <>
@@ -370,18 +388,22 @@ function ProjectCard({ video }: { video: VideoProject }) {
         <Link
           href={`/projects/${video.id}`}
           className="truncate text-[0.9375rem] font-semibold tracking-tight text-ink hover:text-accent-ink"
+          title={video.title}
         >
-          {video.title}
+          {displayTitle(video.title)}
         </Link>
-        <p className="truncate text-xs text-muted">
-          {flag(video.source_language)} {languageLabel(locale, video.source_language)}
-          {video.source_language === "und" && ` (${t("studio.auto")})`}
-          <span aria-hidden="true" className="px-1 text-subtle">
-            →
+        <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs">
+          <span className="font-medium text-ink-2">
+            {flag(video.source_language)} {video.source_language === "und" ? t("studio.auto") : languageLabel(locale, video.source_language)}
           </span>
-          {video.target_languages.map((code) => languageLabel(locale, code)).join(", ")}
-        </p>
-        <div className="mt-0.5">
+          <Icon name="arrowRight" className="h-3 w-3 text-subtle" />
+          {video.target_languages.map((code) => (
+            <span key={code} className="rounded-md bg-surface-2 px-1.5 py-0.5 font-medium text-ink-2" title={languageLabel(locale, code)}>
+              {flag(code)} {code.toUpperCase()}
+            </span>
+          ))}
+        </div>
+        <div className="mt-1 flex items-center justify-between gap-2">
           <Badge tone={statusTone(video.status)}>{t(statusKey(video.status))}</Badge>
         </div>
         {notice && <Toast>{notice}</Toast>}

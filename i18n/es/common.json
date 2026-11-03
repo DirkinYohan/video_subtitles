@@ -82,8 +82,6 @@
   "error.tooMany": "Demasiados intentos. Espera un momento.",
   "error.server": "El servidor falló. Inténtalo de nuevo.",
   "projects.title": "Mis proyectos",
-  "projects.countOne": "1 proyecto",
-  "projects.countMany": "{count} proyectos",
   "projects.emptyTitle": "Todavía no tienes proyectos",
   "projects.emptyBody": "Sube un video para transcribirlo, traducirlo y generar subtítulos en varios idiomas.",
   "projects.create": "Crear video",
@@ -240,5 +238,6 @@
   "status.READY": "Listo para producir",
   "status.PARTIALLY_READY": "Parcialmente listo",
   "status.UPLOADED": "Subido",
-  "status.READY_TO_PLAY": "Listo para reproducir"
+  "status.READY_TO_PLAY": "Listo para reproducir",
+  "projects.subtitle": "Sube, traduce y revisa tus videos en un solo lugar."
 }

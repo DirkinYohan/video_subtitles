@@ -82,8 +82,6 @@
   "error.tooMany": "Too many attempts. Please wait a moment.",
   "error.server": "The server failed. Please try again.",
   "projects.title": "My projects",
-  "projects.countOne": "1 project",
-  "projects.countMany": "{count} projects",
   "projects.emptyTitle": "No projects yet",
   "projects.emptyBody": "Upload a video to transcribe it, translate it and generate subtitles in several languages.",
   "projects.create": "Create video",
@@ -240,5 +238,6 @@
   "status.READY": "Ready to produce",
   "status.PARTIALLY_READY": "Partially ready",
   "status.UPLOADED": "Uploaded",
-  "status.READY_TO_PLAY": "Ready to play"
+  "status.READY_TO_PLAY": "Ready to play",
+  "projects.subtitle": "Upload, translate and review your videos in one place."
 }
