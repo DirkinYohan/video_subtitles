@@ -22,13 +22,15 @@ const BUTTON_BASE =
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
   sm: "min-h-9 px-3 text-sm",
-  md: "min-h-10 px-4 text-sm",
+  md: "min-h-10 px-4.5 text-sm",
 };
 
 const BUTTON_STYLES: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-on-accent hover:bg-accent-strong",
+  // Profundidad: luz interior arriba y la sombra del propio acento.
+  primary:
+    "bg-accent text-on-accent shadow-[var(--shadow-button)] hover:bg-accent-strong hover:brightness-105",
   secondary:
-    "border border-line-strong bg-surface text-ink hover:border-ink/25 hover:bg-surface-2",
+    "border border-line bg-surface text-ink shadow-[var(--shadow-card)] hover:border-line-strong hover:bg-surface-2",
   ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink",
   danger: "bg-danger-soft text-danger hover:bg-danger-softer",
   soft: "bg-accent-soft text-accent-ink hover:bg-accent-softer",
@@ -45,13 +47,13 @@ export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize
  * cambia de color: dos señales para quien no distingue bien los matices.
  */
 export const fieldClass =
-  "min-h-10 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink " +
+  "min-h-11 w-full rounded-lg border border-line bg-surface px-3.5 py-2 text-sm text-ink shadow-[var(--shadow-card)] " +
   "placeholder:text-subtle hover:border-line-strong " +
   "focus:border-accent focus:outline-none focus:shadow-[var(--focus-ring)] " +
   "disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-muted";
 
 /** Superficie elevada: borde O sombra, nunca ambos. */
-export const cardClass = "rounded-xl border border-line bg-surface";
+export const cardClass = "rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]";
 
 /** Superficie elevada sólo con sombra (para lo que flota sobre el contenido). */
 export const floatingClass = "rounded-xl bg-surface shadow-[var(--shadow-float)]";

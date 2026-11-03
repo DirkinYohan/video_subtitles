@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { LanguageMenu } from "@/components/LanguageMenu";
 import { glassClass } from "@/components/classes";
-import { Icon } from "@/components/icons";
+import { Wordmark } from "@/components/Wordmark";
 import type { User } from "@/types/domain";
 
 export function AppFrame({ user, children }: { user: User | null; children: ReactNode }) {
@@ -29,19 +29,11 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
       </a>
 
       <header className={`sticky top-0 z-30 ${glassClass}`}>
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
-          <Link
-            href="/projects"
-            className="flex items-center gap-2.5 rounded-lg text-sm font-semibold tracking-tight text-ink"
-          >
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-paper">
-              <Icon name="captions" className="h-4 w-4" />
-            </span>
-            <span className="hidden sm:inline">{t("app.name")}</span>
-          </Link>
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
+          <Wordmark label={t("app.name")} href="/projects" hideLabelOnMobile />
 
           <nav
-            className="ml-1 flex min-w-0 items-center gap-0.5 rounded-lg bg-nav p-0.5 sm:ml-2"
+            className="ml-2 flex min-w-0 items-center gap-0.5 rounded-xl bg-nav p-1 sm:ml-4"
             aria-label={t("a11y.sidebar")}
           >
             {links.map((link) => (
@@ -49,8 +41,10 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
                 key={link.href}
                 href={link.href}
                 aria-current={link.active ? "page" : undefined}
-                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3 ${
-                  link.active ? "bg-nav-active text-ink" : "text-muted hover:text-ink"
+                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium sm:px-3.5 ${
+                  link.active
+                    ? "bg-nav-active text-ink shadow-[var(--shadow-card)]"
+                    : "text-muted hover:text-ink"
                 }`}
               >
                 {link.label}
@@ -65,9 +59,11 @@ export function AppFrame({ user, children }: { user: User | null; children: Reac
         </div>
       </header>
 
+      {/* La clave por ruta vuelve a disparar la entrada al navegar. */}
       <main
+        key={pathname}
         id="contenido"
-        className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8"
+        className="enter mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 sm:py-10"
         aria-label={t("a11y.main")}
       >
         {children}
@@ -82,10 +78,10 @@ function UserMenu({ user }: { user: User | null }) {
   return (
     <Link
       href="/account"
-      className="flex h-9 items-center gap-2 rounded-lg px-1.5 text-sm text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+      className="flex h-10 items-center gap-2.5 rounded-xl py-1 pl-1 pr-1 text-sm font-medium text-ink-2 hover:bg-surface-2 hover:text-ink sm:pr-3"
       aria-label={t("nav.account")}
     >
-      <span className="grid h-7 w-7 place-items-center rounded-md border border-line bg-surface text-xs font-semibold text-ink">
+      <span className="brand-mark grid h-8 w-8 place-items-center rounded-full text-xs font-semibold">
         {initial}
       </span>
       <span className="hidden max-w-32 truncate sm:inline">{user?.name}</span>

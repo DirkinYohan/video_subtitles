@@ -20,7 +20,8 @@ Definidos en `@theme` y resueltos por tema. Los componentes usan la utilidad
 | Superficies | `paper`, `surface`, `surface-2` | Fondo de página, tarjetas, relleno hundido |
 | Texto | `ink`, `ink-2`, `muted`, `subtle` | Primario, secundario, terciario |
 | Trazos | `line`, `line-strong` | Bordes y divisores |
-| Acento | `accent`, `accent-strong`, `accent-soft`, `on-accent` | Único acento: azul marino de tinta |
+| Acento | `accent`, `accent-strong`, `accent-soft`, `on-accent` | Único acento: índigo (`#4f46e5`; `#8b8fff` en oscuro) |
+| Marca | `brand-from`, `brand-to` | Degradado índigo → violeta: sólo marca, avatar y halos |
 | Estados | `ok`, `warn`, `danger` (+ sus tintes) | Éxito, aviso, error |
 | Velo | `scrim`, `scrim-strong` | Superponer sobre imagen **siempre oscuro** |
 | Navegación | `nav`, `nav-active` | Control segmentado |
@@ -36,6 +37,9 @@ Definidos en `@theme` y resueltos por tema. Los componentes usan la utilidad
   el elemento activo lo dejaba más oscuro que su contenedor en oscuro.
 - **Un solo acento.** Los estados semánticos son familias distintas para que
   nunca se confundan con una acción.
+- **El degradado es de la marca, no de las acciones.** Aparece en la marca
+  (`.brand-mark`), el avatar, el halo de la portada (`.hero-glow`) y la barra
+  de reproducción de la muestra. Un botón nunca lleva degradado.
 
 ## Tipografía
 
@@ -65,7 +69,11 @@ Las píldoras (`rounded-full`) quedan para indicadores de estado pequeños.
 
 Se declara **una vez**: borde *o* sombra, nunca ambos.
 
-- Tarjetas: `border border-line`, sin sombra.
+- Tarjetas en reposo: `border border-line` y `--shadow-card` (un trazo de 1 px
+  de sombra que sólo asienta la superficie).
+- Tarjetas interactivas (`.lift`): al pasar el cursor se elevan 3 px y la
+  sombra (`--shadow-card-hover`) SUSTITUYE al borde, que pasa a transparente.
+- Botón principal: `--shadow-button`, luz interior arriba y sombra del acento.
 - Elementos flotantes (menús, diálogos): sombra con desplazamiento y desenfoque
   (`--shadow-float`, `--shadow-dialog`), sin borde.
 - Las sombras están tintadas al fondo; no hay halos de color.
@@ -79,6 +87,12 @@ Se declara **una vez**: borde *o* sombra, nunca ambos.
 | `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` |
 
 - Pulsación: `scale(0.97)`, 120 ms. Nunca desplazamiento.
+- Entrada de pantalla: `.enter` (subida de 10 px + opacidad, 560 ms). El
+  contenedor principal la repite al cambiar de ruta.
+- Listas: `.enter-stagger`, cada elemento 45 ms después del anterior (tope 8).
+- Carga: `.skeleton`, brillo que recorre la forma del contenido real.
+- Sólo se anima lo poco frecuente (entrar en una pantalla, una tarjeta bajo el
+  cursor). Nada que se repita cientos de veces al día.
 - Entradas de superficies flotantes con `@starting-style`, sin JavaScript.
 - Toda animación queda anulada bajo `prefers-reduced-motion`.
 
