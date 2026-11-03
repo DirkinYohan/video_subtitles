@@ -27,3 +27,6 @@ export function useCaptionSize(): CaptionSize {
 }
 
 export const CAPTION_CLASS = ["text-sm", "text-lg", "text-2xl", "text-4xl"] as const;
+
+/** A pantalla completa la imagen es mucho mayor: el texto crece con ella. */
+export const CAPTION_CLASS_FULLSCREEN = ["text-xl", "text-3xl", "text-4xl", "text-6xl"] as const;

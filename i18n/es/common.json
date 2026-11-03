@@ -186,6 +186,7 @@
   "player.volume": "Volumen",
   "player.speed": "Velocidad",
   "player.fullscreen": "Pantalla completa",
+  "player.exitFullscreen": "Salir de pantalla completa",
   "player.audio": "Audio",
   "player.subtitles": "Subtítulos",
   "player.cueList": "Subtítulos",

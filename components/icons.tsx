@@ -5,7 +5,7 @@ export type IconName =
   | "chevron" | "play" | "pause" | "volume" | "expand" | "upload" | "search" | "globe"
   | "skipBack" | "skipForward"
   | "plus" | "minus" | "more" | "check" | "download" | "pencil" | "trash" | "clock" | "alert" | "spark"
-  | "arrowLeft" | "arrowRight" | "sun" | "moon" | "scissors" | "merge" | "logout";
+  | "arrowLeft" | "arrowRight" | "sun" | "moon" | "scissors" | "merge" | "logout" | "shrink";
 
 /**
  * Iconos de la interfaz.
@@ -72,6 +72,8 @@ function paths(name: IconName): ReactNode {
       return <path d="M4 10h3l4-3v10l-4-3H4zM16 9a4 4 0 0 1 0 6" />;
     case "expand":
       return <path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4" />;
+    case "shrink":
+      return <path d="M4 8h4V4M20 8h-4V4M4 16h4v4M20 16h-4v4" />;
     case "upload":
       return <path d="M12 16V6M8 9l4-4 4 4M5 19h14" />;
     case "download":

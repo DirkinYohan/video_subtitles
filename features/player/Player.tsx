@@ -5,7 +5,7 @@ import type { CSSProperties, RefObject } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
 import { StatusDot, IconButton } from "@/components/ui";
-import { CAPTION_CLASS, useCaptionSize, writeCaptionSize, type CaptionSize } from "@/lib/captions";
+import { CAPTION_CLASS, CAPTION_CLASS_FULLSCREEN, useCaptionSize, writeCaptionSize, type CaptionSize } from "@/lib/captions";
 import { formatClock } from "@/lib/cues";
 import { languageLabel } from "@/lib/i18n";
 import { flag } from "@/lib/languages";
@@ -83,6 +83,30 @@ export function Player({
     setElement(node);
   }, []);
   const { t, locale } = useI18n();
+
+  // Pantalla completa del REPRODUCTOR entero, no del <video>: los subtítulos
+  // son una capa encima y, con sólo el <video> a pantalla completa, el
+  // navegador los dejaba fuera.
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === frameRef.current && frameRef.current !== null);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    const frame = frameRef.current;
+    if (frame?.requestFullscreen) {
+      void frame.requestFullscreen().catch(() => undefined);
+      return;
+    }
+    // iPhone: sólo admite pantalla completa del propio <video>.
+    (videoRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null)?.webkitEnterFullscreen?.();
+  }, []);
 
   // Duración real y salvaguarda de sonido, en cuanto hay metadatos.
   const applyMetadata = useCallback(
@@ -241,19 +265,23 @@ export function Player({
   return (
     <div className="grid min-w-0 gap-4">
       <div
+        ref={frameRef}
         className={
-          bare
-            ? "bg-surface"
-            : "overflow-hidden rounded-2xl border border-line bg-surface"
+          fullscreen
+            ? "flex h-full w-full flex-col bg-stage"
+            : bare
+              ? "bg-surface"
+              : "overflow-hidden rounded-2xl border border-line bg-surface"
         }
       >
         {/* --- Imagen --- */}
-        <div className="relative bg-stage">
+        <div className={fullscreen ? "relative min-h-0 flex-1 bg-stage" : "relative bg-stage"}>
           <video
             ref={attachVideo}
             src={`/api/videos/${projectId}/media`}
             poster={poster || undefined}
-            className="aspect-video w-full object-contain"
+            className={fullscreen ? "h-full w-full object-contain" : "aspect-video w-full object-contain"}
+            onDoubleClick={toggleFullscreen}
             onLoadedMetadata={(event) => applyMetadata(event.currentTarget)}
             onTimeUpdate={(event) => {
               const video = event.currentTarget;
@@ -297,7 +325,7 @@ export function Player({
             <div className="pointer-events-none absolute inset-x-[7%] bottom-[11%] text-center">
               <span
                 lang={lang}
-                className={`inline-block max-w-[85%] rounded-md bg-scrim-strong px-3.5 py-2 leading-snug text-white backdrop-blur-sm [text-wrap:balance] ${CAPTION_CLASS[size]}`}
+                className={`inline-block max-w-[85%] rounded-md bg-scrim-strong px-3.5 py-2 leading-snug text-white backdrop-blur-sm [text-wrap:balance] ${fullscreen ? CAPTION_CLASS_FULLSCREEN[size] : CAPTION_CLASS[size]}`}
               >
                 {overlay}
               </span>
@@ -438,11 +466,11 @@ export function Player({
             </button>
 
             <IconButton
-              label={t("player.fullscreen")}
+              label={fullscreen ? t("player.exitFullscreen") : t("player.fullscreen")}
               className="!h-8 !w-8"
-              onClick={() => void videoRef.current?.requestFullscreen()}
+              onClick={toggleFullscreen}
             >
-              <Icon name="expand" className="h-4 w-4" />
+              <Icon name={fullscreen ? "shrink" : "expand"} className="h-4 w-4" />
             </IconButton>
           </div>
         </div>
