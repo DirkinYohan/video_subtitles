@@ -5,7 +5,6 @@ import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
 import { buttonClass } from "@/components/classes";
 import { languageLabel } from "@/lib/i18n";
-import { downloadDirect, publicApiBase } from "@/lib/direct";
 import { getJson, postJson } from "@/services/client";
 
 type RenderState = "idle" | "queued" | "running" | "done" | "stale" | "failed" | "unavailable";
@@ -52,7 +51,10 @@ export function ExportMenu({
   useEffect(() => {
     if (render.state === "done" && wantsDownload.current) {
       wantsDownload.current = false;
-      void downloadDirect(fileUrl);
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = "";
+      link.click();
     }
   }, [render.state, fileUrl]);
 
@@ -75,13 +77,6 @@ export function ExportMenu({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
-
-  function openFile(event: React.MouseEvent<HTMLAnchorElement>) {
-    setOpen(false);
-    if (!publicApiBase()) return;
-    event.preventDefault();
-    void downloadDirect(fileUrl);
-  }
 
   async function prepare() {
     wantsDownload.current = true;
@@ -188,7 +183,7 @@ export function ExportMenu({
                 </div>
               </div>
             ) : render.state === "done" ? (
-              <a role="menuitem" className={buttonClass("primary", "sm")} href={fileUrl} onClick={(event) => openFile(event)}>
+              <a role="menuitem" className={buttonClass("primary", "sm")} href={fileUrl} onClick={() => setOpen(false)}>
                 <Icon name="download" className="h-4 w-4" />
                 {t("export.videoDownload")}
               </a>
@@ -200,7 +195,7 @@ export function ExportMenu({
                     <Icon name="spark" className="h-4 w-4" />
                     {t("export.videoUpdate")}
                   </button>
-                  <a role="menuitem" className={buttonClass("secondary", "sm")} href={fileUrl} onClick={(event) => openFile(event)}>
+                  <a role="menuitem" className={buttonClass("secondary", "sm")} href={fileUrl} onClick={() => setOpen(false)}>
                     <Icon name="download" className="h-4 w-4" />
                     {t("export.videoPrevious")}
                   </a>

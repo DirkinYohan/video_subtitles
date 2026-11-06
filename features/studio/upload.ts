@@ -1,4 +1,3 @@
-import { directApiUrl, publicApiBase } from "@/lib/direct";
 import { ApiError } from "@/services/client";
 
 export type UploadResult = {
@@ -15,20 +14,6 @@ export function uploadVideo(
   onProgress: (loaded: number, total: number) => void,
   signal: { abort: () => void },
 ): Promise<UploadResult> {
-  return directApiUrl("/api/videos").then(
-    (url) => send(url, file, source, targets, onProgress, signal),
-    () => Promise.reject(new ApiError(401, "ticket")),
-  );
-}
-
-function send(
-  url: string,
-  file: File,
-  source: string,
-  targets: string[],
-  onProgress: (loaded: number, total: number) => void,
-  signal: { abort: () => void },
-): Promise<UploadResult> {
   const body = new FormData();
   body.set("file", file);
   body.set("source_language", source);
@@ -36,8 +21,8 @@ function send(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     signal.abort = () => xhr.abort();
-    xhr.open("POST", url);
-    xhr.withCredentials = !publicApiBase();
+    xhr.open("POST", "/api/videos");
+    xhr.withCredentials = true;
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress(event.loaded, event.total);
     };

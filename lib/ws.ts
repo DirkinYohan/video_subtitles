@@ -1,5 +1,3 @@
-import { publicApiBase } from "@/lib/direct";
-
 const DEFAULT_API_PORT = "8000";
 
 function apiPort(): string {
@@ -22,7 +20,7 @@ export function alignLoopbackHost(url: string, pageHostname: string | null | und
 }
 
 export function wsBase(): string {
-  const explicit = process.env.NEXT_PUBLIC_WS_URL || publicApiBase().replace(/^http/, "ws");
+  const explicit = process.env.NEXT_PUBLIC_WS_URL;
   if (explicit && explicit.trim()) {
     const base = explicit.trim().replace(/\/+$/, "");
     return typeof window === "undefined" ? base : alignLoopbackHost(base, window.location.hostname);

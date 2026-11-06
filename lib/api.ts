@@ -1,4 +1,4 @@
-const API = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API = process.env.API_INTERNAL_URL || "http://127.0.0.1:8000";
 
 export async function apiGet<T>(path: string, cookie: string): Promise<T | null> {
   const response = await fetch(`${API}${path}`, {
