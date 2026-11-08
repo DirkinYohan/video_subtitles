@@ -90,7 +90,7 @@
   "error.forbidden": "You don't have permission for this action.",
   "error.notFound": "The resource wasn't found.",
   "error.conflict": "A record with that data already exists.",
-  "error.tooLarge": "The video is too long: storage holds about 17 minutes at most.",
+  "error.tooLarge": "The video is too long: storage holds about 25 minutes at most.",
   "error.invalid": "The submitted data isn't valid.",
   "error.tooMany": "Too many attempts. Please wait a moment.",
   "error.server": "The server failed. Please try again.",
