@@ -230,6 +230,9 @@ export function WatchStudio({
 
   const liveSourceCovered =
     (live.coverage[sourceLanguage] ?? []).find(([start]) => start <= 0)?.[1] ?? 0;
+  const exportLanguages = Array.from(
+    new Set([...project.target_languages, sourceLanguage].filter((code) => code && code !== "und")),
+  );
   const processCovered = Math.max(coveredMs < timelineDuration ? coveredMs : 0, liveSourceCovered);
 
   return (
@@ -279,7 +282,13 @@ export function WatchStudio({
                 {t("process.processing")}
               </span>
             ) : null}
-            <ExportMenu key={language} projectId={project.id} language={language} processing={processing} />
+            <ExportMenu
+              projectId={project.id}
+              language={language}
+              languages={exportLanguages}
+              sourceLanguage={sourceLanguage}
+              processing={processing}
+            />
           </>
         }
       />

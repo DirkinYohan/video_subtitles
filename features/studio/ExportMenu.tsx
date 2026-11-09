@@ -5,6 +5,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
 import { buttonClass } from "@/components/classes";
 import { languageLabel } from "@/lib/i18n";
+import { flag } from "@/lib/languages";
 import { downloadDirect, publicApiBase } from "@/lib/direct";
 import { getJson, postJson } from "@/services/client";
 
@@ -16,16 +17,23 @@ const itemClass =
 
 export function ExportMenu({
   projectId,
-  language,
+  language: initialLanguage,
+  languages = [],
+  sourceLanguage = "",
   processing = false,
 }: {
   projectId: string;
   language: string;
+  languages?: string[];
+  sourceLanguage?: string;
   processing?: boolean;
 }) {
   const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
+  const options = languages.length > 0 ? languages : [initialLanguage];
+  const [language, setLanguage] = useState(options.includes(initialLanguage) ? initialLanguage : options[0]);
   const [render, setRender] = useState<{ state: RenderState; progress: number }>({ state: "idle", progress: 0 });
+  const [notice, setNotice] = useState("");
   const wantsDownload = useRef(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -34,14 +42,19 @@ export function ExportMenu({
   const fileUrl = `/api/videos/${projectId}/render/file?${query}`;
   const busy = render.state === "queued" || render.state === "running";
 
-  const refresh = useCallback(async () => {
-    try {
-      const status = await getJson<RenderStatus>(`/api/videos/${projectId}/render?${query}`);
-      setRender({ state: status.state, progress: status.progress });
-    } catch {
-      setRender({ state: "unavailable", progress: 0 });
-    }
-  }, [projectId, query]);
+  const refresh = useCallback(
+    async (code: string = language) => {
+      try {
+        const status = await getJson<RenderStatus>(
+          `/api/videos/${projectId}/render?lang=${encodeURIComponent(code)}`,
+        );
+        setRender({ state: status.state, progress: status.progress });
+      } catch {
+        setRender({ state: "unavailable", progress: 0 });
+      }
+    },
+    [projectId, language],
+  );
 
   useEffect(() => {
     if (!busy) return;
@@ -50,11 +63,24 @@ export function ExportMenu({
   }, [busy, refresh]);
 
   useEffect(() => {
-    if (render.state === "done" && wantsDownload.current) {
-      wantsDownload.current = false;
-      void downloadDirect(fileUrl);
-    }
-  }, [render.state, fileUrl]);
+    if (render.state !== "done" || !wantsDownload.current) return;
+    wantsDownload.current = false;
+    void downloadDirect(fileUrl);
+    const shown = window.setTimeout(() => setNotice(t("export.videoStarted")), 0);
+    const hidden = window.setTimeout(() => setNotice(""), 6000);
+    return () => {
+      window.clearTimeout(shown);
+      window.clearTimeout(hidden);
+    };
+  }, [render.state, fileUrl, t]);
+
+  function choose(code: string) {
+    if (code === language || busy) return;
+    wantsDownload.current = false;
+    setLanguage(code);
+    setRender({ state: "idle", progress: 0 });
+    void refresh(code);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -111,7 +137,11 @@ export function ExportMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => {
-          if (!open) void refresh();
+          if (!open) {
+            const next = !busy && options.includes(initialLanguage) ? initialLanguage : language;
+            setLanguage(next);
+            void refresh(next);
+          }
           setOpen(!open);
         }}
       >
@@ -121,6 +151,22 @@ export function ExportMenu({
         <Icon name="chevron" className="h-3.5 w-3.5 text-subtle" />
       </button>
 
+      {!open && (busy || notice) && (
+        <div
+          data-elevated="true"
+          className="absolute right-0 z-30 mt-1.5 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-3 shadow-[var(--shadow-float)]"
+        >
+          {busy ? (
+            <RenderProgress state={render.state} progress={render.progress} label={label} />
+          ) : (
+            <p role="status" className="flex items-center gap-2 text-xs font-medium text-ok">
+              <Icon name="check" className="h-4 w-4" />
+              {notice}
+            </p>
+          )}
+        </div>
+      )}
+
       {open && (
         <div
           role="menu"
@@ -128,6 +174,31 @@ export function ExportMenu({
           data-elevated="true"
           className="absolute right-0 z-40 mt-1.5 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-1.5 shadow-[var(--shadow-float)]"
         >
+          {options.length > 1 && (
+            <div className="px-2.5 pb-2 pt-1.5">
+              <p className="pb-1.5 text-xs font-semibold uppercase tracking-wide text-subtle">{t("export.language")}</p>
+              <div role="radiogroup" aria-label={t("export.language")} className="flex flex-wrap gap-1.5">
+                {options.map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    role="radio"
+                    aria-checked={code === language}
+                    disabled={busy && code !== language}
+                    onClick={() => choose(code)}
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      code === language
+                        ? "border-accent/40 bg-accent-soft text-accent-ink"
+                        : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                    }`}
+                  >
+                    {flag(code)} {languageLabel(locale, code)}
+                    {code === sourceLanguage && <span className="text-subtle">· {t("export.original")}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="px-2.5 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-subtle">
             {t("export.subtitles", { lang: label })}
           </p>
@@ -175,18 +246,7 @@ export function ExportMenu({
             )}
 
             {busy ? (
-              <div className="grid gap-1.5" role="status">
-                <div className="flex items-center justify-between text-xs font-medium text-ink-2">
-                  <span>{render.state === "queued" ? t("export.videoQueued") : t("export.videoPreparing")}</span>
-                  <span className="tabular">{render.progress}%</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                  <div
-                    className="h-full rounded-full bg-accent transition-[width] duration-500"
-                    style={{ width: `${Math.max(3, render.progress)}%` }}
-                  />
-                </div>
-              </div>
+              <RenderProgress state={render.state} progress={render.progress} label={label} />
             ) : render.state === "done" ? (
               <a role="menuitem" className={buttonClass("primary", "sm")} href={fileUrl} onClick={(event) => openFile(event)}>
                 <Icon name="download" className="h-4 w-4" />
@@ -224,6 +284,37 @@ export function ExportMenu({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+function RenderProgress({ state, progress, label }: { state: RenderState; progress: number; label: string }) {
+  const { t } = useI18n();
+  const value = Math.max(0, Math.min(100, progress));
+  return (
+    <div className="grid gap-2" role="status" aria-live="polite">
+      <div className="flex items-baseline justify-between gap-3 text-xs font-medium text-ink-2">
+        <span>
+          {state === "queued" ? t("export.videoQueued") : t("export.videoPreparing")}
+          <span className="text-subtle"> · {label}</span>
+        </span>
+        <span className="tabular text-sm font-semibold text-ink">{value}%</span>
+      </div>
+      <div
+        className="h-2.5 overflow-hidden rounded-full bg-surface-2"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        aria-label={t("export.videoPreparing")}
+      >
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-500"
+          style={{ width: `${Math.max(3, value)}%` }}
+        />
+      </div>
+      <p className="text-[11px] text-subtle">{t("export.videoAuto")}</p>
     </div>
   );
 }
