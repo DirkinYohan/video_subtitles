@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { IconButton } from "@/components/ui";
-import { formatClock, rulerTicks } from "@/lib/cues";
+import { formatClock, isBlankCue, rulerTicks } from "@/lib/cues";
 import type { Cue } from "@/types/domain";
 
 const ZOOM_LEVELS = [1, 2, 4, 8, 16] as const;
@@ -34,6 +34,7 @@ export function Timeline({
   filmstripSrc?: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const blocks = useMemo(() => cues.filter((cue) => !isBlankCue(cue)), [cues]);
   const [zoom, setZoom] = useState(1);
   const [scrubbing, setScrubbing] = useState(false);
   const [filmstripFailed, setFilmstripFailed] = useState(false);
@@ -83,12 +84,12 @@ export function Timeline({
       className={
         bare
           ? "border-t border-line bg-surface"
-          : "overflow-hidden rounded-xl border border-line bg-surface"
+          : "overflow-hidden rounded-2xl border border-line bg-surface"
       }
       aria-label={labels.title}
     >
-      <div className="flex items-center gap-2 px-4 pb-1 pt-3">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-subtle">
+      <div className="flex items-center gap-2 px-4 pb-1.5 pt-3">
+        <p className="text-xs font-medium text-subtle">
           {labels.title}
         </p>
 
@@ -101,7 +102,7 @@ export function Timeline({
           >
             <Icon name="minus" className="h-3 w-3" />
           </IconButton>
-          <span className="tabular min-w-7 text-center text-[0.6875rem] font-medium text-subtle">
+          <span className="min-w-7 text-center font-mono text-[0.6875rem] font-medium tabular-nums text-subtle">
             {zoom}×
           </span>
           <IconButton
@@ -121,7 +122,7 @@ export function Timeline({
             {ticks.map((tick) => (
               <span
                 key={tick}
-                className="tabular absolute top-0 -translate-x-1/2 text-[0.625rem] font-medium text-subtle"
+                className="tabular absolute top-0 font-mono -translate-x-1/2 text-[0.625rem] font-medium text-subtle"
                 style={{ left: widthPct(tick) }}
               >
                 {formatClock(tick)}
@@ -138,7 +139,7 @@ export function Timeline({
             aria-valuemax={span}
             aria-valuenow={Math.round(timeMs)}
             aria-valuetext={formatClock(timeMs)}
-            className={`relative h-[5rem] cursor-pointer overflow-hidden rounded-lg bg-stage ${
+            className={`relative h-[5.5rem] cursor-pointer touch-none overflow-hidden rounded-xl bg-stage ring-1 ring-inset ring-white/[0.06] ${
               scrubbing ? "select-none" : ""
             }`}
             onPointerDown={(event) => {
@@ -173,7 +174,7 @@ export function Timeline({
                 aria-hidden
                 draggable={false}
                 onError={() => setFilmstripFailed(true)}
-                className="pointer-events-none absolute inset-x-0 top-0 h-8 w-full select-none object-fill opacity-80"
+                className="pointer-events-none absolute inset-x-0 top-0 h-9 w-full select-none object-fill opacity-70"
               />
             )}
 
@@ -194,7 +195,7 @@ export function Timeline({
               />
             )}
 
-            {cues.map((cue) => {
+            {blocks.map((cue) => {
               const isActive = activeIndex === cue.index;
               const isSelected = selectedIndex === cue.index;
               const width = Math.max(0.5, ((cue.end_ms - cue.start_ms) / span) * 100);
@@ -209,12 +210,12 @@ export function Timeline({
                     onSelect(cue);
                     onSeek(cue.start_ms);
                   }}
-                  className={`absolute top-9 h-[1.85rem] overflow-hidden rounded px-1.5 text-left text-[0.625rem] leading-[1.15] transition-colors ${
+                  className={`absolute top-[2.75rem] h-[2rem] overflow-hidden rounded-md px-1.5 text-left text-[0.625rem] leading-[1.15] ring-1 ring-inset transition-colors duration-150 ${
                     isSelected
-                      ? "z-20 bg-accent font-medium text-on-accent"
+                      ? "z-20 bg-accent font-medium text-on-accent ring-white/30"
                       : isActive
-                        ? "z-10 bg-accent/85 text-on-accent"
-                        : "bg-accent-soft text-accent-ink hover:bg-accent-softer"
+                        ? "z-10 bg-accent/80 text-on-accent ring-white/20"
+                        : "bg-white/[0.1] text-white/80 ring-white/[0.06] hover:bg-white/[0.18]"
                   }`}
                   style={{ left: widthPct(cue.start_ms), width: `${width}%` }}
                 >
@@ -225,17 +226,17 @@ export function Timeline({
 
             <span
               aria-hidden
-              className="pointer-events-none absolute top-0 z-30 h-full w-px bg-white/90"
+              className="pointer-events-none absolute top-0 z-30 h-full w-0.5 -translate-x-1/2 bg-accent shadow-[0_0_0_1px_rgb(0_0_0/0.35)]"
               style={{ left: playheadLeft }}
             >
-              <span className="absolute -left-[4px] -top-0.5 h-2 w-2 rotate-45 rounded-[1px] bg-white/90" />
+              <span className="absolute -left-[4px] -top-0.5 h-2.5 w-2.5 rounded-b-full rounded-t-[2px] bg-accent" />
             </span>
           </div>
 
           {coveredMs > 0 && coveredMs < span && labels.pending && (
             <p className="mt-2 text-xs leading-5 text-subtle">{labels.pending}</p>
           )}
-          {cues.length === 0 && <p className="mt-3 text-sm text-subtle">{labels.empty}</p>}
+          {blocks.length === 0 && <p className="mt-3 text-sm text-subtle">{labels.empty}</p>}
         </div>
       </div>
     </section>

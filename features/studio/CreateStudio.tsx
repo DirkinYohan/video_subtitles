@@ -8,9 +8,11 @@ import { Button, PageHeader, Progress, StatusDot, buttonClass, fieldClass } from
 import { formatClock } from "@/lib/cues";
 import { displayTitle, formatBytes } from "@/lib/format";
 import { languageLabel } from "@/lib/i18n";
-import { LANGS, flag } from "@/lib/languages";
+import { LANGS } from "@/lib/languages";
+import { Flag } from "@/components/Flag";
 import { errorMessageKey } from "@/services/client";
 import { uploadVideo } from "@/features/studio/upload";
+import { takePendingUpload } from "@/lib/pendingUpload";
 
 export function CreateStudio() {
   const { t, locale } = useI18n();
@@ -34,6 +36,15 @@ export function CreateStudio() {
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
+
+  // Archivo soltado en Mis proyectos.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const pending = takePendingUpload();
+      if (pending) chooseFile(pending);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const percent = total > 0 ? Math.round((loaded / total) * 100) : 0;
 
@@ -110,11 +121,11 @@ export function CreateStudio() {
             <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
               <span
                 aria-current={isCurrent ? "step" : undefined}
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors duration-300 ${
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold tabular-nums transition-colors duration-300 ${
                   step.done
-                    ? "bg-accent text-on-accent shadow-[var(--shadow-button)]"
+                    ? "bg-primary text-on-primary"
                     : isCurrent
-                      ? "border-2 border-accent bg-surface text-accent-ink"
+                      ? "border border-ink bg-surface text-ink"
                       : "border border-line-strong bg-surface text-subtle"
                 }`}
               >
@@ -126,8 +137,8 @@ export function CreateStudio() {
               {index < steps.length - 1 && (
                 <span className="relative h-px min-w-4 flex-1 overflow-hidden rounded-full bg-line-strong">
                   <span
-                    className={`absolute inset-y-0 left-0 bg-accent transition-[width] duration-500 ease-[var(--ease-out-quart)] ${
-                      step.done ? "w-full" : "w-0"
+                    className={`absolute inset-0 origin-left bg-ink transition-transform duration-500 ease-[var(--ease-out-quart)] ${
+                      step.done ? "scale-x-100" : "scale-x-0"
                     }`}
                   />
                 </span>
@@ -137,13 +148,13 @@ export function CreateStudio() {
         })}
       </ol>
 
-      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface">
           {preview ? (
             <>
               <video ref={videoRef} src={preview} className="aspect-video w-full bg-stage object-contain" controls />
               <div className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3.5">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-ink-2 ring-1 ring-inset ring-line">
                   <Icon name="play" className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -184,20 +195,19 @@ export function CreateStudio() {
             >
               <span
                 aria-hidden="true"
-                className={`absolute inset-3 rounded-xl border-2 border-dashed transition-colors duration-200 ${
-                  over ? "border-accent" : "border-line-strong group-hover:border-accent/60"
+                className={`absolute inset-3 rounded-xl border border-dashed transition-colors duration-200 ${
+                  over ? "border-accent" : "border-line-strong group-hover:border-subtle"
                 }`}
               />
-              <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 opacity-60" />
-              <span className="relative grid justify-items-center gap-2">
+                            <span className="relative grid justify-items-center gap-2">
                 <span
-                  className={`brand-mark grid h-14 w-14 place-items-center rounded-2xl transition-transform duration-300 ease-[var(--ease-out-quart)] group-hover:-translate-y-1 ${
-                    over ? "scale-110" : ""
+                  className={`grid h-12 w-12 place-items-center rounded-xl bg-primary text-on-primary shadow-[var(--shadow-button)] transition-transform duration-200 ease-[var(--ease-out-quart)] group-hover:-translate-y-0.5 ${
+                    over ? "scale-105" : ""
                   }`}
                 >
-                  <Icon name="upload" className="h-6 w-6" />
+                  <Icon name="upload" className="h-5 w-5" />
                 </span>
-                <span className="mt-3 text-base font-semibold text-ink">{t("studio.drop")}</span>
+                <span className="mt-4 text-base font-semibold tracking-[-0.015em] text-ink">{t("studio.drop")}</span>
                 <span className="text-sm text-muted">{t("studio.or")}</span>
                 <span className="mt-1 text-xs text-subtle">{t("studio.formats")}</span>
               </span>
@@ -229,8 +239,8 @@ export function CreateStudio() {
           )}
         </section>
 
-        <aside className="grid min-w-0 grid-cols-1 gap-5 lg:sticky lg:top-24">
-          <section className="grid min-w-0 grid-cols-1 gap-5 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+        <aside className="grid min-w-0 grid-cols-1 gap-4 lg:sticky lg:top-24">
+          <section className="grid min-w-0 grid-cols-1 gap-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <label className="grid gap-2 text-sm">
               <span className="font-medium text-ink">{t("studio.source")}</span>
               <span className="relative">
@@ -243,7 +253,7 @@ export function CreateStudio() {
                   <option value="und">{t("studio.auto")}</option>
                   {LANGS.map((lang) => (
                     <option key={lang} value={lang}>
-                      {flag(lang)} {languageLabel(locale, lang)}
+                      {languageLabel(locale, lang)}
                     </option>
                   ))}
                 </select>
@@ -262,19 +272,19 @@ export function CreateStudio() {
                   return (
                     <label
                       key={lang}
-                      className={`inline-flex cursor-pointer select-none items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow] duration-200 has-[:focus-visible]:shadow-[var(--focus-ring)] ${
+                      className={`inline-flex min-h-9 cursor-pointer select-none items-center gap-2 rounded-full border px-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow] duration-200 has-[:focus-visible]:shadow-[var(--focus-ring)] ${
                         checked
-                          ? "border-accent/50 bg-accent-soft text-accent-ink"
-                          : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
+                          ? "border-transparent bg-primary text-on-primary"
+                          : "border-line-strong bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink"
                       }`}
                     >
                       <input type="checkbox" className="sr-only" checked={checked} onChange={() => toggle(lang)} />
-                      <span aria-hidden="true">{flag(lang)}</span>
+                      <Flag code={lang} />
                       {languageLabel(locale, lang)}
                       <span
                         aria-hidden="true"
                         className={`grid h-4 w-4 place-items-center rounded-full transition-[transform,opacity] duration-200 ${
-                          checked ? "scale-100 bg-accent text-on-accent opacity-100" : "scale-50 opacity-0"
+                          checked ? "scale-100 bg-on-primary text-primary opacity-100" : "scale-50 opacity-0"
                         }`}
                       >
                         <Icon name="check" className="h-2.5 w-2.5" />
@@ -286,23 +296,23 @@ export function CreateStudio() {
             </fieldset>
           </section>
 
-          <section className="grid min-w-0 grid-cols-1 gap-4 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+          <section className="grid min-w-0 grid-cols-1 gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <h2 className="text-sm font-semibold text-ink">{t("upload.summary")}</h2>
             <dl className="grid grid-cols-1 gap-2.5 text-sm">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted">{t("upload.step1")}</dt>
-                <dd className="min-w-0 truncate font-medium text-ink">{file ? displayTitle(file.name) : "—"}</dd>
+                <dd className="min-w-0 truncate font-medium text-ink">{file ? displayTitle(file.name) : "-"}</dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted">{t("studio.source")}</dt>
                 <dd className="font-medium text-ink">
-                  {flag(source)} {source === "und" ? t("studio.auto") : languageLabel(locale, source)}
+                  {source === "und" ? t("studio.auto") : languageLabel(locale, source)}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted">{t("upload.into")}</dt>
                 <dd className="min-w-0 truncate text-right font-medium text-ink">
-                  {chosen.length > 0 ? chosen.map((lang) => languageLabel(locale, lang)).join(", ") : "—"}
+                  {chosen.length > 0 ? chosen.map((lang) => languageLabel(locale, lang)).join(", ") : "-"}
                 </dd>
               </div>
             </dl>

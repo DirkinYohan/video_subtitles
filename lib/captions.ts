@@ -29,3 +29,53 @@ export function useCaptionSize(): CaptionSize {
 export const CAPTION_CLASS = ["text-sm", "text-lg", "text-2xl", "text-4xl"] as const;
 
 export const CAPTION_CLASS_FULLSCREEN = ["text-xl", "text-3xl", "text-4xl", "text-6xl"] as const;
+
+/* Estilo del subtítulo en el reproductor: fondo y posición. Preferencia local. */
+export type CaptionBackground = "solid" | "soft" | "none";
+export type CaptionPosition = "bottom" | "top";
+export type CaptionStyle = { background: CaptionBackground; position: CaptionPosition };
+
+const STYLE_KEY = "ia_caption_style";
+const DEFAULT_STYLE: CaptionStyle = { background: "soft", position: "bottom" };
+let cachedRaw: string | null = null;
+let cachedStyle: CaptionStyle = DEFAULT_STYLE;
+
+function readCaptionStyle(): CaptionStyle {
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(STYLE_KEY);
+  } catch {
+    return DEFAULT_STYLE;
+  }
+  if (raw === cachedRaw) return cachedStyle;
+  cachedRaw = raw;
+  try {
+    const parsed = JSON.parse(raw || "{}") as Partial<CaptionStyle>;
+    cachedStyle = {
+      background: parsed.background === "solid" || parsed.background === "none" ? parsed.background : "soft",
+      position: parsed.position === "top" ? "top" : "bottom",
+    };
+  } catch {
+    cachedStyle = DEFAULT_STYLE;
+  }
+  return cachedStyle;
+}
+
+export function writeCaptionStyle(patch: Partial<CaptionStyle>): void {
+  const next = { ...readCaptionStyle(), ...patch };
+  try {
+    window.localStorage.setItem(STYLE_KEY, JSON.stringify(next));
+  } catch {
+  }
+  window.dispatchEvent(new Event(CAPTION_EVENT));
+}
+
+export function useCaptionStyle(): CaptionStyle {
+  return useSyncExternalStore(subscribe, readCaptionStyle, () => DEFAULT_STYLE);
+}
+
+export const CAPTION_BACKGROUND_CLASS: Record<CaptionBackground, string> = {
+  solid: "bg-black/85",
+  soft: "bg-black/55 backdrop-blur-sm",
+  none: "bg-transparent [text-shadow:0_1px_2px_rgb(0_0_0/0.9),0_0_8px_rgb(0_0_0/0.6)]",
+};

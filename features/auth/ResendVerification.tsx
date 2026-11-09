@@ -36,7 +36,7 @@ export function ResendVerification({ email }: { email: string }) {
         type="button"
         onClick={() => void resend()}
         disabled={state === "sending"}
-        className="justify-self-start text-sm font-medium text-accent hover:underline hover:underline-offset-4 disabled:opacity-60"
+        className="justify-self-start text-sm font-medium text-accent-ink underline-offset-4 hover:underline disabled:opacity-60"
       >
         {state === "sending" ? t("verify.resending") : t("verify.resend")}
       </button>

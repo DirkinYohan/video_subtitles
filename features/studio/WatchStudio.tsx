@@ -1,19 +1,22 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Icon } from "@/components/icons";
-import { Button, PageHeader, StatusDot } from "@/components/ui";
+import { LangCode } from "@/components/Flag";
+import { ProgressRing, SegmentedControl } from "@/components/kit";
+import { Button, StatusDot } from "@/components/ui";
 import { Editor } from "@/features/editor/Editor";
 import { ProcessPanel } from "@/features/jobs/ProcessPanel";
 import { ExportMenu } from "@/features/studio/ExportMenu";
 import { CueList } from "@/features/player/CueList";
 import { Player } from "@/features/player/Player";
 import { Timeline } from "@/features/player/Timeline";
-import { appendCues, cuesDuration, formatClock, mergeServerTrack, normalizeCues } from "@/lib/cues";
+import { appendCues, cuesDuration, formatClock, mergeServerTrack, normalizeCues, transcriptCues } from "@/lib/cues";
 import { displayTitle } from "@/lib/format";
 import { languageLabel } from "@/lib/i18n";
-import { flag } from "@/lib/languages";
 import { isActive } from "@/lib/status";
 import { cuesFromEvent, useJobEvents } from "@/lib/useJobEvents";
 import { useJobProgress } from "@/lib/useJobProgress";
@@ -45,7 +48,8 @@ export function WatchStudio({
   const language = chosenLanguage ?? initialLanguage;
   const setLanguage = setChosenLanguage;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [panel, setPanel] = useState<"subtitles" | "production">("subtitles");
+  const [panel, setPanel] = useState<"subtitles" | "editor" | "production">("subtitles");
+  const reduceMotion = useReducedMotion();
   const [producing, setProducing] = useState(false);
   const [produceError, setProduceError] = useState("");
 
@@ -56,7 +60,7 @@ export function WatchStudio({
 
   const [liveEnabled, setLiveEnabled] = useState(true);
 
-  const cues = currentTracks[language] || [];
+  const cues = useMemo(() => currentTracks[language] || [], [currentTracks, language]);
   const timelineDuration = Math.max(durationMs, cuesDuration(cues), 1000);
   const activeIndex = cues[findCueIndex(cues, timeMs)]?.index ?? null;
   const [serverCoverage, setServerCoverage] = useState<Record<string, number>>({});
@@ -235,63 +239,76 @@ export function WatchStudio({
   );
   const processCovered = Math.max(coveredMs < timelineDuration ? coveredMs : 0, liveSourceCovered);
 
+  const transcriptCount = useMemo(() => transcriptCues(cues).length, [cues]);
+  const sourceTrack = language !== sourceLanguage ? currentTracks[sourceLanguage] : undefined;
+
   return (
-    <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-6">
-      <PageHeader
-        crumbs={[{ href: "/projects", label: t("projects.title") }]}
-        title={<span title={project.title}>{displayTitle(project.title)}</span>}
-        meta={
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+    <div className="mx-auto grid w-full min-w-0 max-w-[90rem] grid-cols-1 gap-5">
+      <header className="flex min-w-0 flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0 flex-[1_1_24rem]">
+          <Link
+            href="/projects"
+            className="group mb-2 inline-flex items-center gap-1.5 rounded-md text-sm text-muted hover:text-ink"
+          >
+            <Icon name="arrowLeft" className="h-3.5 w-3.5 transition-transform duration-150 group-hover:-translate-x-0.5" />
+            {t("projects.title")}
+          </Link>
+          <h1
+            title={project.title}
+            className="line-clamp-2 break-words text-2xl font-semibold leading-tight tracking-[-0.025em] text-ink sm:text-[1.75rem]"
+          >
+            {displayTitle(project.title)}
+          </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             {durationMs > 0 && (
-              <span className="tabular inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-1 font-medium text-ink-2">
+              <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-surface-2 px-2.5 font-mono tabular-nums text-ink-2">
                 <Icon name="clock" className="h-3.5 w-3.5 text-subtle" />
                 {formatClock(durationMs)}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-1 font-medium text-ink-2">
-              {flag(sourceLanguage)} {sourceLanguage === "und" ? t("studio.auto") : languageLabel(locale, sourceLanguage)}
+            <span className="inline-flex h-7 items-center rounded-full bg-surface-2 px-2.5 text-ink-2">
+              <LangCode code={sourceLanguage} />
             </span>
             <Icon name="arrowRight" className="h-3.5 w-3.5 text-subtle" />
-            {project.target_languages.map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => setLanguage(code)}
-                aria-pressed={code === language}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 font-medium ${
-                  code === language
-                    ? "border-accent/40 bg-accent-soft text-accent-ink"
-                    : "border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink"
-                }`}
-              >
-                {flag(code)} {languageLabel(locale, code)}
-              </button>
-            ))}
-          </div>
-        }
-        actions={
-          <>
-            {readyToProduce ? (
-              <Button type="button" disabled={producing} onClick={() => void produce("progressive")}>
-                <Icon name="spark" className="h-4 w-4" />
-                {producing ? t("process.starting") : t("process.produce")}
-              </Button>
-            ) : processing ? (
-              <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent-soft px-3.5 text-sm font-medium text-accent-ink">
-                <StatusDot tone="accent" pulse />
-                {t("process.processing")}
-              </span>
-            ) : null}
-            <ExportMenu
-              projectId={project.id}
-              language={language}
-              languages={exportLanguages}
-              sourceLanguage={sourceLanguage}
-              processing={processing}
+            <SegmentedControl
+              size="sm"
+              label={t("player.subtitles")}
+              value={language}
+              onChange={setLanguage}
+              options={project.target_languages.map((code) => ({
+                value: code,
+                ariaLabel: languageLabel(locale, code),
+                label: <LangCode code={code} />,
+              }))}
             />
-          </>
-        }
-      />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {readyToProduce ? (
+            <Button type="button" disabled={producing} onClick={() => void produce("progressive")}>
+              <Icon name="spark" className="h-4 w-4" />
+              {producing ? t("process.starting") : t("process.produce")}
+            </Button>
+          ) : processing ? (
+            <button
+              type="button"
+              onClick={() => setPanel("production")}
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent-soft px-3.5 text-sm font-medium text-accent-ink"
+            >
+              <ProgressRing value={currentJob?.progress ?? 0} size={16} stroke={2.5} />
+              <span className="font-mono tabular-nums">{currentJob?.progress ?? 0}%</span>
+              {t("process.processing")}
+            </button>
+          ) : null}
+          <ExportMenu
+            projectId={project.id}
+            language={language}
+            languages={exportLanguages}
+            sourceLanguage={sourceLanguage}
+            processing={processing}
+          />
+        </div>
+      </header>
 
       {produceError && (
         <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
@@ -299,10 +316,9 @@ export function WatchStudio({
         </p>
       )}
 
-      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_25rem] xl:grid-cols-[minmax(0,1fr)_27rem]">
+        <div className="grid min-w-0 gap-4">
           <Player
-            bare
             projectId={project.id}
             cues={cues}
             tracks={currentTracks}
@@ -326,10 +342,10 @@ export function WatchStudio({
             coveredMs={languageCoveredMs}
             trackFailed={languageFailed}
             poster={project.thumbnail_url}
+            filmstripSrc={`/api/videos/${project.id}/storyboard`}
           />
 
           <Timeline
-            bare
             cues={cues}
             durationMs={timelineDuration}
             timeMs={timeMs}
@@ -349,11 +365,12 @@ export function WatchStudio({
           />
         </div>
 
-        <aside className="grid min-w-0 gap-3 lg:sticky lg:top-24">
-          <div role="tablist" aria-label={t("studio.tabs")} className="grid grid-cols-2 gap-1 rounded-xl bg-nav p-1">
+        <aside className="grid min-w-0 gap-3 lg:sticky lg:top-[4.5rem]">
+          <div role="tablist" aria-label={t("studio.tabs")} className="grid grid-cols-3 gap-0.5 rounded-[10px] bg-nav p-[3px]">
             {(
               [
-                { key: "subtitles", label: t("player.cueList"), badge: String(cues.length) },
+                { key: "subtitles", label: t("studio.transcript"), badge: String(transcriptCount) },
+                { key: "editor", label: t("editor.title"), badge: "" },
                 { key: "production", label: t("process.title"), badge: "" },
               ] as const
             ).map((tab) => {
@@ -366,48 +383,88 @@ export function WatchStudio({
                   id={`tab-${tab.key}`}
                   aria-selected={selected}
                   aria-controls={`panel-${tab.key}`}
+                  data-no-press
                   onClick={() => setPanel(tab.key)}
-                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
-                    selected ? "bg-nav-active text-ink shadow-[var(--shadow-card)]" : "text-muted hover:text-ink"
+                  className={`relative inline-flex h-8 items-center justify-center gap-1.5 rounded-[7px] px-2 text-sm font-medium transition-colors duration-150 ${
+                    selected ? "text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
-                  {tab.label}
+                  {selected && (
+                    <motion.span
+                      layoutId="studio-tab"
+                      transition={reduceMotion ? { duration: 0 } : { type: "spring", duration: 0.32, bounce: 0 }}
+                      className="absolute inset-0 rounded-[7px] bg-nav-active shadow-[var(--shadow-card)]"
+                    />
+                  )}
+                  <span className="relative">{tab.label}</span>
                   {tab.badge && (
-                    <span className="tabular rounded-md bg-surface-2 px-1.5 py-px text-[0.6875rem] text-muted">
-                      {tab.badge}
+                    <span className="relative font-mono text-[0.6875rem] tabular-nums text-subtle">{tab.badge}</span>
+                  )}
+                  {tab.key === "production" && processing && (
+                    <span className="relative">
+                      <StatusDot tone="accent" pulse />
                     </span>
                   )}
-                  {tab.key === "production" && processing && <StatusDot tone="accent" pulse />}
                 </button>
               );
             })}
           </div>
 
-          {panel === "subtitles" ? (
+          {panel === "subtitles" && (
             <div role="tabpanel" id="panel-subtitles" aria-labelledby="tab-subtitles" className="enter-fade">
-              {cues.length > 0 ? (
+              {transcriptCount > 0 ? (
                 <CueList
                   cues={cues}
                   activeIndex={activeIndex}
                   selectedIndex={selectedIndex}
                   onSelect={(cue) => setSelectedIndex(cue.index)}
                   onSeek={seek}
-                  showHeader={false}
-                  heightClass="max-h-[28rem] lg:max-h-[calc(100dvh-13rem)]"
+                  sourceCues={sourceTrack}
+                  heightClass="max-h-[28rem] lg:max-h-[calc(100dvh-12rem)]"
                 />
               ) : (
-                <div className="grid place-items-center gap-3 rounded-2xl border border-dashed border-line-strong bg-surface px-6 py-12 text-center">
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent-soft text-accent-ink">
-                    <Icon name="captions" className="h-5 w-5" />
-                  </span>
-                  <p className="max-w-[26ch] text-sm leading-6 text-muted">
+                <div className="grid place-items-center gap-3 rounded-2xl border border-dashed border-line-strong bg-surface px-6 py-14 text-center">
+                  {processing || liveActive ? (
+                    <div className="grid w-full max-w-[16rem] gap-2.5" aria-hidden="true">
+                      {[0, 1, 2].map((row) => (
+                        <div key={row} className="flex gap-3">
+                          <div className="skeleton h-3 w-9 rounded" />
+                          <div className="skeleton h-3 flex-1 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Icon name="captions" className="h-6 w-6 text-subtle" />
+                  )}
+                  <p className="max-w-[28ch] text-sm leading-6 text-muted">
                     {processing || liveActive ? t("timeline.pending") : t("timeline.empty")}
                   </p>
                 </div>
               )}
             </div>
-          ) : (
-            <div role="tabpanel" id="panel-production" aria-labelledby="tab-production" className="enter-fade grid gap-3">
+          )}
+
+          {panel === "editor" && (
+            <div role="tabpanel" id="panel-editor" aria-labelledby="tab-editor" className="enter-fade">
+              <Editor
+                projectId={project.id}
+                cues={cues}
+                language={language}
+                onLanguageChange={setLanguage}
+                languages={editorLanguages}
+                selectedIndex={selectedIndex}
+                processing={processing}
+                onCuesChange={(next) =>
+                  setCurrentTracks((current) => ({ ...current, [language]: normalizeCues(next, language) }))
+                }
+                onSelect={(cue) => setSelectedIndex(cue.index)}
+                onSeek={seek}
+              />
+            </div>
+          )}
+
+          {panel === "production" && (
+            <div role="tabpanel" id="panel-production" aria-labelledby="tab-production" className="enter-fade">
               <ProcessPanel
                 job={currentJob}
                 eventsStatus={events.status}
@@ -423,20 +480,6 @@ export function WatchStudio({
           )}
         </aside>
       </div>
-
-      <Editor
-        projectId={project.id}
-        cues={cues}
-        language={language}
-        onLanguageChange={setLanguage}
-        languages={editorLanguages}
-        selectedIndex={selectedIndex}
-        onCuesChange={(next) =>
-          setCurrentTracks((current) => ({ ...current, [language]: normalizeCues(next, language) }))
-        }
-        onSelect={(cue) => setSelectedIndex(cue.index)}
-        onSeek={seek}
-      />
     </div>
   );
 }

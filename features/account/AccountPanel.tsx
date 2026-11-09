@@ -124,22 +124,21 @@ export function AccountPanel({ user }: { user: User }) {
       {notice && <Toast>{notice}</Toast>}
       {error && <Toast tone="danger">{error}</Toast>}
 
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
-        <div aria-hidden="true" className="hero-glow h-24 bg-surface-2 sm:h-28" />
-        <div className="flex flex-wrap items-end gap-4 px-5 pb-5 sm:px-6">
+      <section className="rounded-2xl border border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-4 p-5 sm:p-6">
           <span
             aria-hidden
-            className="brand-mark -mt-10 grid h-20 w-20 shrink-0 place-items-center rounded-2xl text-2xl font-semibold ring-4 ring-surface"
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-accent-soft text-xl font-semibold text-accent-ink ring-1 ring-inset ring-accent-softer"
           >
             {initial}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-semibold tracking-tight text-ink">{user.name}</p>
+            <p className="truncate text-lg font-semibold tracking-[-0.02em] text-ink">{user.name}</p>
             <p className="truncate text-sm text-muted">{user.email}</p>
           </div>
           <dl className="text-right text-sm">
             <dt className="text-xs text-muted">{t("account.since")}</dt>
-            <dd className="font-medium text-ink">{since || "—"}</dd>
+            <dd className="font-medium text-ink">{since || "-"}</dd>
           </dl>
         </div>
       </section>
@@ -258,7 +257,7 @@ export function AccountPanel({ user }: { user: User }) {
               onChange={(event) => writeCaptionSize(Number(event.target.value) as CaptionSize)}
             />
             <span className="relative grid h-24 place-items-center overflow-hidden rounded-lg bg-stage">
-              <span aria-hidden="true" className="hero-glow absolute inset-0 opacity-70" />
+              <span aria-hidden="true" className="preview-scene absolute inset-0 opacity-80" />
               <span
                 className={`${CAPTION_CLASS[size]} relative rounded-md bg-scrim-strong px-3 py-1.5 leading-snug text-white transition-[font-size] duration-200`}
               >
@@ -290,10 +289,10 @@ function SettingsRow({
   return (
     <section className="grid gap-4 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-8">
       <div>
-        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        <h2 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
       </div>
-      <div className="grid gap-4 rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+      <div className="grid gap-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
         {children}
       </div>
     </section>

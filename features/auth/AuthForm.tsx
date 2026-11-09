@@ -171,7 +171,7 @@ export function AuthForm({
           </label>
           <Link
             href="/forgot-password"
-            className="font-medium text-accent hover:underline hover:underline-offset-4"
+            className="font-medium text-accent-ink underline-offset-4 hover:underline"
           >
             {t("auth.forgot")}
           </Link>
@@ -188,13 +188,13 @@ export function AuthForm({
           {info}
         </p>
       )}
-      <Button type="submit" disabled={pending} className="mt-1 w-full">
+      <Button type="submit" disabled={pending} className="mt-2 min-h-11 w-full">
         {pending ? t("auth.loading") : mode === "login" ? t("auth.login") : mode === "register" ? t("auth.register") : mode === "forgot" ? t("auth.sendLink") : t("auth.reset")}
       </Button>
       {mode === "login" && (
         <p className="text-center text-sm text-muted">
           {t("auth.noAccount")}{" "}
-          <Link href="/register" className="font-medium text-accent hover:underline hover:underline-offset-4">
+          <Link href="/register" className="font-medium text-accent-ink underline-offset-4 hover:underline">
             {t("auth.create")}
           </Link>
         </p>
@@ -202,14 +202,14 @@ export function AuthForm({
       {mode === "register" && (
         <p className="text-center text-sm text-muted">
           {t("auth.haveAccount")}{" "}
-          <Link href="/login" className="font-medium text-accent hover:underline hover:underline-offset-4">
+          <Link href="/login" className="font-medium text-accent-ink underline-offset-4 hover:underline">
             {t("auth.loginLink")}
           </Link>
         </p>
       )}
       {mode === "forgot" && (
         <p className="text-center text-sm">
-          <Link href="/login" className="text-accent hover:underline hover:underline-offset-4">
+          <Link href="/login" className="font-medium text-accent-ink underline-offset-4 hover:underline">
             {t("auth.backLogin")}
           </Link>
         </p>

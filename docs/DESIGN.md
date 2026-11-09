@@ -20,8 +20,8 @@ Definidos en `@theme` y resueltos por tema. Los componentes usan la utilidad
 | Superficies | `paper`, `surface`, `surface-2` | Fondo de página, tarjetas, relleno hundido |
 | Texto | `ink`, `ink-2`, `muted`, `subtle` | Primario, secundario, terciario |
 | Trazos | `line`, `line-strong` | Bordes y divisores |
-| Acento | `accent`, `accent-strong`, `accent-soft`, `on-accent` | Único acento: índigo (`#4f46e5`; `#8b8fff` en oscuro) |
-| Marca | `brand-from`, `brand-to` | Degradado índigo → violeta: sólo marca, avatar y halos |
+| Principal | `primary`, `primary-hover`, `on-primary` | Botón principal y selección: tinta sobre papel (`#111113`; `#ededef` en oscuro) |
+| Acento | `accent`, `accent-strong`, `accent-soft`, `on-accent` | Único acento: cobalto (`#2f5bea`; `#7896ff` en oscuro) |
 | Estados | `ok`, `warn`, `danger` (+ sus tintes) | Éxito, aviso, error |
 | Velo | `scrim`, `scrim-strong` | Superponer sobre imagen **siempre oscuro** |
 | Navegación | `nav`, `nav-active` | Control segmentado |
@@ -37,16 +37,20 @@ Definidos en `@theme` y resueltos por tema. Los componentes usan la utilidad
   el elemento activo lo dejaba más oscuro que su contenedor en oscuro.
 - **Un solo acento.** Los estados semánticos son familias distintas para que
   nunca se confundan con una acción.
-- **El degradado es de la marca, no de las acciones.** Aparece en la marca
-  (`.brand-mark`), el avatar, el halo de la portada (`.hero-glow`) y la barra
-  de reproducción de la muestra. Un botón nunca lleva degradado.
+- **Sin degradados ni halos.** La paleta es grafito neutro. El botón principal
+  es monocromo (`primary`); el acento cobalto queda para lo que está activo o
+  avanza: progreso, cabezal, frase activa, foco, enlaces y reproducir.
+- **El escenario siempre es oscuro.** La vista previa del reproductor
+  (`components/CaptionPreview.tsx`, `.preview-scene`) y la celda de sincronía de
+  la portada usan `stage` en los dos temas, como el propio reproductor.
 
 ## Tipografía
 
-Inter vía `next/font`, con `font-feature-settings` y cifras tabulares en
-`.tabular` / `data-numeric` para tiempos y contadores.
+Geist y Geist Mono vía `next/font`. Cifras tabulares en `.tabular` /
+`data-numeric`; los códigos de tiempo y de formato van en `font-mono`.
 
-- Títulos: `font-semibold`, `tracking-[-0.02em]`, `leading` ajustado.
+- Títulos: `font-semibold`, tracking negativo según tamaño (`-0.02em` a
+  `-0.04em` en la portada), `leading` ajustado.
 - Cuerpo: `text-sm`/`text-base` con `leading-6`.
 - Nunca se usan etiquetas en mayúsculas con tracking amplio por encima de un
   título: el encabezado se sostiene solo.
@@ -57,25 +61,23 @@ Una sola escala, documentada en el token:
 
 | Token | Valor | Uso |
 |---|---|---|
-| `rounded-sm` | 8px | Etiquetas de estado |
-| `rounded-md` | 10px | Campos, controles compactos |
-| `rounded-lg` | 12px | Botones, tarjetas de control |
-| `rounded-xl` | 14px | Tarjetas y superficies |
-| `rounded-2xl` | 20px | Diálogos y reproductor |
+| `rounded-sm` | 6px | Etiquetas de estado |
+| `rounded-md` | 8px | Controles compactos |
+| `rounded-lg` | 10px | Botones y campos |
+| `rounded-xl` | 14px | Miniaturas, menús flotantes |
+| `rounded-2xl` | 18px | Tarjetas, diálogos y reproductor |
 
-Las píldoras (`rounded-full`) quedan para indicadores de estado pequeños.
+Las píldoras (`rounded-full`) son para filtros y selección de idioma.
 
 ## Elevación
 
 Se declara **una vez**: borde *o* sombra, nunca ambos.
 
-- Tarjetas en reposo: `border border-line` y `--shadow-card` (un trazo de 1 px
-  de sombra que sólo asienta la superficie).
-- Tarjetas interactivas (`.lift`): al pasar el cursor se elevan 3 px y la
-  sombra (`--shadow-card-hover`) SUSTITUYE al borde, que pasa a transparente.
-- Botón principal: `--shadow-button`, luz interior arriba y sombra del acento.
-- Elementos flotantes (menús, diálogos): sombra con desplazamiento y desenfoque
-  (`--shadow-float`, `--shadow-dialog`), sin borde.
+- Tarjetas y paneles: sólo `border border-line`, sin sombra.
+- Proyectos: miniatura con anillo interior y texto debajo, sin tarjeta.
+- Botón principal: `--shadow-button`, luz interior arriba y sombra corta.
+- Elementos flotantes (menús, diálogos): `--shadow-float` / `--shadow-dialog`,
+  que ya incluyen un anillo de 1 px; nunca se suma `border`.
 - Las sombras están tintadas al fondo; no hay halos de color.
 
 ## Movimiento

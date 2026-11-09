@@ -69,7 +69,7 @@ export function LanguageMenu({ align = "right" }: { align?: "left" | "right" }) 
           role="menu"
           aria-label={t("lang.menu")}
           data-elevated="true"
-          className={`absolute z-40 mt-1 w-52 rounded-lg border border-line bg-surface p-1 shadow-[var(--shadow-float)] ${
+          className={`absolute z-40 mt-1 w-52 rounded-xl bg-surface p-1 shadow-[var(--shadow-float)] ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

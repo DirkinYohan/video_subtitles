@@ -40,7 +40,7 @@ export function IconButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; variant?: Variant }) {
   const tones: Record<Variant, string> = {
-    primary: "bg-accent text-on-accent hover:bg-accent-strong",
+    primary: "bg-primary text-on-primary hover:bg-primary-hover",
     secondary: "border border-line-strong bg-surface text-ink hover:bg-surface-2",
     ghost: "text-muted hover:bg-surface-2 hover:text-ink",
     danger: "bg-danger-soft text-danger hover:bg-danger-softer",
@@ -121,7 +121,7 @@ export function SectionHeader({
   return (
     <div className={`flex flex-wrap items-end justify-between gap-3 ${className}`}>
       <div className="min-w-0">
-        <h2 className="text-base font-semibold tracking-tight text-ink">{title}</h2>
+        <h2 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">{title}</h2>
         {description && (
           <p className="mt-1 max-w-[65ch] text-sm leading-6 text-muted">{description}</p>
         )}
@@ -164,10 +164,10 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        <h1 className="line-clamp-2 break-words text-2xl font-semibold sm:truncate tracking-[-0.025em] text-ink sm:text-[1.875rem] sm:leading-tight">
+        <h1 className="line-clamp-2 break-words text-[1.625rem] font-semibold leading-tight tracking-[-0.03em] text-ink sm:truncate sm:text-[2rem]">
           {title}
         </h1>
-        {description && <p className="mt-1.5 max-w-[65ch] text-sm leading-6 text-muted">{description}</p>}
+        {description && <p className="mt-2 max-w-[65ch] text-[0.9375rem] leading-6 text-muted">{description}</p>}
         {meta && <div className="mt-2.5">{meta}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -187,7 +187,7 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-semibold ${tones[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium leading-5 ${tones[tone]}`}
     >
       {children}
     </span>
@@ -227,7 +227,7 @@ export function Progress({
   const tones = { accent: "bg-accent", ok: "bg-ok", warn: "bg-warn", danger: "bg-danger" };
   return (
     <div
-      className="h-1.5 overflow-hidden rounded-full bg-surface-2"
+      className="h-1.5 overflow-hidden rounded-full bg-line"
       role="progressbar"
       aria-valuenow={width}
       aria-valuemin={0}
@@ -235,8 +235,8 @@ export function Progress({
       aria-label={label}
     >
       <div
-        className={`h-full rounded-full transition-[width] duration-500 ease-out ${tones[tone]}`}
-        style={{ width: `${width}%` }}
+        className={`h-full w-full origin-left rounded-full transition-transform duration-500 ease-[var(--ease-out-quart)] ${tones[tone]}`}
+        style={{ transform: `scaleX(${width / 100})` }}
       />
     </div>
   );
@@ -252,7 +252,7 @@ export function Empty({
   action?: ReactNode;
 }) {
   return (
-    <div className="grid place-items-center gap-3 rounded-xl border border-dashed border-line px-6 py-12 text-center">
+    <div className="grid place-items-center gap-3 rounded-xl border border-dashed border-line-strong px-6 py-14 text-center">
       {icon && <div className="text-subtle">{icon}</div>}
       <p className="max-w-sm text-sm leading-6 text-muted">{children}</p>
       {action}
@@ -349,7 +349,7 @@ export function Modal({
       <button
         type="button"
         tabIndex={-1}
-        className="absolute inset-0 cursor-default bg-scrim backdrop-blur-[2px]"
+        className="absolute inset-0 cursor-default bg-scrim backdrop-blur-[3px]"
         aria-label={label}
         onClick={onClose}
       />
@@ -360,7 +360,7 @@ export function Modal({
         aria-label={label}
         tabIndex={-1}
         data-elevated="true"
-        className="relative z-10 w-full max-w-md rounded-2xl bg-surface p-6 shadow-[var(--shadow-dialog)] outline-none"
+        className="relative z-10 w-full max-w-md rounded-2xl bg-surface p-6 shadow-[var(--shadow-dialog)] outline-none sm:p-7"
       >
         {children}
       </div>

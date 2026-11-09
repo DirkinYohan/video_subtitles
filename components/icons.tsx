@@ -1,144 +1,141 @@
-import type { ReactNode } from "react";
+import type { ComponentType } from "react";
+import {
+  ArrowClockwiseIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ArrowsInIcon,
+  ArrowsLeftRightIcon,
+  ArrowsOutIcon,
+  CaretDownIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  ClosedCaptioningIcon,
+  CommandIcon,
+  CopyIcon,
+  DotsThreeIcon,
+  DownloadSimpleIcon,
+  FilmStripIcon,
+  FolderSimpleIcon,
+  GearSixIcon,
+  GlobeSimpleIcon,
+  GridFourIcon,
+  KeyboardIcon,
+  LinkSimpleIcon,
+  ListIcon,
+  MagnifyingGlassIcon,
+  MinusIcon,
+  MoonIcon,
+  PauseIcon,
+  PencilSimpleIcon,
+  PictureInPictureIcon,
+  PlayIcon,
+  PlusIcon,
+  RowsIcon,
+  ScissorsIcon,
+  SidebarSimpleIcon,
+  SignOutIcon,
+  SparkleIcon,
+  SpeakerHighIcon,
+  SpeakerXIcon,
+  SubtitlesIcon,
+  SunIcon,
+  TextAaIcon,
+  TimerIcon,
+  TrashIcon,
+  UploadSimpleIcon,
+  UserIcon,
+  WarningCircleIcon,
+  XCircleIcon,
+  XIcon,
+  ArrowLineDownIcon,
+  ClockCounterClockwiseIcon,
+  CaretRightIcon,
+  ArrowUUpLeftIcon,
+  ArrowUUpRightIcon,
+  GitMergeIcon,
+  FileTextIcon,
+  FileZipIcon,
+  FileVideoIcon,
+} from "@phosphor-icons/react/ssr";
+import type { IconProps } from "@phosphor-icons/react";
 
-export type IconName =
-  | "menu" | "close" | "panel" | "folder" | "captions" | "settings" | "user"
-  | "chevron" | "play" | "pause" | "volume" | "expand" | "upload" | "search" | "globe"
-  | "skipBack" | "skipForward"
-  | "plus" | "minus" | "more" | "check" | "download" | "pencil" | "trash" | "clock" | "alert" | "spark"
-  | "arrowLeft" | "arrowRight" | "sun" | "moon" | "scissors" | "merge" | "logout" | "shrink";
+/**
+ * Un solo set de iconos (Phosphor, peso "regular", trazo uniforme). Los
+ * componentes piden iconos por nombre; así cambiar de set es tocar este archivo.
+ */
+const ICONS = {
+  menu: ListIcon,
+  close: XIcon,
+  panel: SidebarSimpleIcon,
+  folder: FolderSimpleIcon,
+  captions: SubtitlesIcon,
+  cc: ClosedCaptioningIcon,
+  settings: GearSixIcon,
+  user: UserIcon,
+  chevron: CaretDownIcon,
+  chevronRight: CaretRightIcon,
+  play: PlayIcon,
+  pause: PauseIcon,
+  volume: SpeakerHighIcon,
+  mute: SpeakerXIcon,
+  expand: ArrowsOutIcon,
+  shrink: ArrowsInIcon,
+  pip: PictureInPictureIcon,
+  upload: UploadSimpleIcon,
+  download: DownloadSimpleIcon,
+  search: MagnifyingGlassIcon,
+  globe: GlobeSimpleIcon,
+  skipBack: ClockCounterClockwiseIcon,
+  skipForward: ArrowClockwiseIcon,
+  plus: PlusIcon,
+  minus: MinusIcon,
+  more: DotsThreeIcon,
+  check: CheckIcon,
+  checkCircle: CheckCircleIcon,
+  download2: ArrowLineDownIcon,
+  pencil: PencilSimpleIcon,
+  trash: TrashIcon,
+  clock: ClockIcon,
+  timer: TimerIcon,
+  alert: WarningCircleIcon,
+  error: XCircleIcon,
+  spark: SparkleIcon,
+  arrowLeft: ArrowLeftIcon,
+  arrowRight: ArrowRightIcon,
+  swap: ArrowsLeftRightIcon,
+  sun: SunIcon,
+  moon: MoonIcon,
+  scissors: ScissorsIcon,
+  merge: GitMergeIcon,
+  logout: SignOutIcon,
+  grid: GridFourIcon,
+  list: RowsIcon,
+  keyboard: KeyboardIcon,
+  command: CommandIcon,
+  link: LinkSimpleIcon,
+  copy: CopyIcon,
+  retry: ArrowClockwiseIcon,
+  undo: ArrowUUpLeftIcon,
+  redo: ArrowUUpRightIcon,
+  text: TextAaIcon,
+  film: FilmStripIcon,
+  fileText: FileTextIcon,
+  fileZip: FileZipIcon,
+  fileVideo: FileVideoIcon,
+} satisfies Record<string, ComponentType<IconProps>>;
 
-export function Icon({ name, className = "h-5 w-5" }: { name: IconName; className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      {paths(name)}
-    </svg>
-  );
-}
+export type IconName = keyof typeof ICONS;
 
-function paths(name: IconName): ReactNode {
-  switch (name) {
-    case "menu":
-      return <path d="M4 7h16M4 12h16M4 17h16" />;
-    case "close":
-      return <path d="M6 6l12 12M18 6L6 18" />;
-    case "panel":
-      return <path d="M4 5h16v14H4zM9 5v14" />;
-    case "folder":
-      return <path d="M3 7h6l2 2h10v9H3z" />;
-    case "captions":
-      return <path d="M4 6h16v12H4zM7 11h4M7 14h7M13 11h4" />;
-    case "settings":
-      return (
-        <>
-          <circle cx="12" cy="12" r="3.25" />
-          <path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2" />
-        </>
-      );
-    case "user":
-      return (
-        <>
-          <circle cx="12" cy="8.5" r="3.5" />
-          <path d="M5 19a7 7 0 0 1 14 0" />
-        </>
-      );
-    case "chevron":
-      return <path d="M8 10l4 4 4-4" />;
-    case "play":
-      return <path d="M9 6.5l9 5.5-9 5.5z" />;
-    case "pause":
-      return <path d="M9 6v12M15 6v12" />;
-    case "skipBack":
-      return <path d="M11 7l-6 5 6 5zM19 7l-6 5 6 5z" />;
-    case "skipForward":
-      return <path d="M5 7l6 5-6 5zM13 7l6 5-6 5z" />;
-    case "volume":
-      return <path d="M4 10h3l4-3v10l-4-3H4zM16 9a4 4 0 0 1 0 6" />;
-    case "expand":
-      return <path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4" />;
-    case "shrink":
-      return <path d="M4 8h4V4M20 8h-4V4M4 16h4v4M20 16h-4v4" />;
-    case "upload":
-      return <path d="M12 16V6M8 9l4-4 4 4M5 19h14" />;
-    case "download":
-      return <path d="M12 5v10M8 12l4 4 4-4M5 19h14" />;
-    case "search":
-      return (
-        <>
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="M20 20l-4-4" />
-        </>
-      );
-    case "plus":
-      return <path d="M12 5v14M5 12h14" />;
-    case "arrowLeft":
-      return <path d="M19 12H5M11 6l-6 6 6 6" />;
-    case "arrowRight":
-      return <path d="M5 12h14M13 6l6 6-6 6" />;
-    case "minus":
-      return <path d="M5 12h14" />;
-    case "more":
-      return (
-        <>
-          <circle cx="12" cy="5.5" r="1.25" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="18.5" r="1.25" fill="currentColor" stroke="none" />
-        </>
-      );
-    case "check":
-      return <path d="M5 12.5l4.5 4.5L19 7" />;
-    case "pencil":
-      return <path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4" />;
-    case "trash":
-      return <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6" />;
-    case "clock":
-      return (
-        <>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 8v4.5l3 1.5" />
-        </>
-      );
-    case "alert":
-      return <path d="M12 4l9 16H3zM12 10v4M12 17.2v.1" />;
-    case "spark":
-      return <path d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z" />;
-    case "scissors":
-      return (
-        <>
-          <circle cx="6" cy="6" r="2.5" />
-          <circle cx="6" cy="18" r="2.5" />
-          <path d="M8.1 7.4L19 17M8.1 16.6L19 7M12.5 12h.01" />
-        </>
-      );
-    case "merge":
-      return <path d="M6 4v4a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v4M18 4v4a4 4 0 0 1-4 4" />;
-    case "logout":
-      return <path d="M14 5H6v14h8M10 12h10M16.5 8.5L20 12l-3.5 3.5" />;
-    case "sun":
-      return (
-        <>
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4" />
-        </>
-      );
-    case "moon":
-      return <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />;
-    case "globe":
-    default:
-      return (
-        <>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M4 12h16M12 4c2 2.2 3 4.8 3 8s-1 5.8-3 8c-2-2.2-3-4.8-3-8s1-5.8 3-8z" />
-        </>
-      );
-  }
+export function Icon({
+  name,
+  className = "h-5 w-5",
+  weight = "regular",
+}: {
+  name: IconName;
+  className?: string;
+  weight?: IconProps["weight"];
+}) {
+  const Glyph = ICONS[name];
+  return <Glyph className={className} weight={weight} aria-hidden="true" focusable="false" />;
 }

@@ -123,7 +123,7 @@ export function JobStatus({
           >
             <span
               aria-hidden
-              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] ${step < index ? "bg-ok-soft text-ok" : step === index ? "bg-accent text-white" : "bg-paper text-muted"}`}
+              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] ${step < index ? "bg-ok-soft text-ok" : step === index ? "bg-accent text-on-accent" : "bg-paper text-muted"}`}
             >
               {step < index ? "✓" : step === index ? "●" : "○"}
             </span>

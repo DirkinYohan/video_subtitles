@@ -100,3 +100,60 @@ export function mergeServerTrack(server: Cue[], local: Cue[], language: string):
   const newer = local.filter((cue) => cue.start_ms >= serverEnd);
   return appendCues(normalizeCues(server, language), newer, language);
 }
+
+/* ------------------------------------------------------------------ */
+/* Presentación de la transcripción                                    */
+/* ------------------------------------------------------------------ */
+
+/** Texto listo para mostrar: sin espacios antes de la puntuación ni dobles espacios. */
+export function displayCueText(text: string): string {
+  return String(text ?? "")
+    .replace(/[ \t]+([.,!?;:…])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+/** Un segmento vacío o sólo con puntuación no aporta nada a la lista. */
+export function isBlankCue(cue: Pick<Cue, "text">): boolean {
+  return displayCueText(cue.text).replace(/[\s.,!?;:…\-–—"'«»()¿¡]/g, "").length === 0;
+}
+
+const SENTENCE_END = /[.!?…]["'»)\]]*$/;
+
+export type DisplayCue = Cue & { display: string; continues: boolean };
+
+/**
+ * Quita los segmentos vacíos y marca los que continúan la frase anterior
+ * (la anterior no cierra con puntuación y el hueco es corto), para que la
+ * lista los muestre unidos en lugar de como frases cortadas.
+ */
+export function transcriptCues(cues: Cue[], maxGapMs = 1200): DisplayCue[] {
+  const out: DisplayCue[] = [];
+  for (const cue of cues) {
+    if (isBlankCue(cue)) continue;
+    const display = displayCueText(cue.text);
+    const previous = out[out.length - 1];
+    const continues =
+      previous !== undefined &&
+      !SENTENCE_END.test(previous.display) &&
+      cue.start_ms - previous.end_ms <= maxGapMs;
+    out.push({ ...cue, display, continues });
+  }
+  return out;
+}
+
+/** Segmento de otra pista que más se solapa en el tiempo con `cue`. */
+export function overlappingCue(cue: Pick<Cue, "start_ms" | "end_ms">, others: Cue[]): Cue | null {
+  let best: Cue | null = null;
+  let bestOverlap = 0;
+  for (const other of others) {
+    if (other.end_ms <= cue.start_ms) continue;
+    if (other.start_ms >= cue.end_ms) break;
+    const overlap = Math.min(cue.end_ms, other.end_ms) - Math.max(cue.start_ms, other.start_ms);
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap;
+      best = other;
+    }
+  }
+  return best;
+}
