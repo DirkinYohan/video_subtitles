@@ -15,6 +15,8 @@ import { useSubtitleSync } from "@/lib/useSubtitleSync";
 import type { Cue } from "@/types/domain";
 
 const MAX_HOLD_MS = 10_000;
+// En pantalla completa los controles se ocultan tras este tiempo sin mover el ratón.
+const CONTROLS_IDLE_MS = 3_000;
 
 export function Player({
   projectId,
@@ -77,11 +79,46 @@ export function Player({
 
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [idle, setIdle] = useState(false);
+  const [overControls, setOverControls] = useState(false);
+  const [controlsHeight, setControlsHeight] = useState(0);
+  const idleTimer = useRef<number | undefined>(undefined);
+  const controlsRef = useRef<HTMLDivElement | null>(null);
+  const wake = useCallback(() => {
+    setIdle(false);
+    window.clearTimeout(idleTimer.current);
+    idleTimer.current = window.setTimeout(() => setIdle(true), CONTROLS_IDLE_MS);
+  }, []);
   useEffect(() => {
-    const sync = () => setFullscreen(document.fullscreenElement === frameRef.current && frameRef.current !== null);
+    const sync = () => {
+      const on = document.fullscreenElement === frameRef.current && frameRef.current !== null;
+      setFullscreen(on);
+      if (on) {
+        wake();
+      } else {
+        window.clearTimeout(idleTimer.current);
+        setIdle(false);
+      }
+    };
     document.addEventListener("fullscreenchange", sync);
     return () => document.removeEventListener("fullscreenchange", sync);
+  }, [wake]);
+  useEffect(() => {
+    if (!fullscreen) return;
+    window.addEventListener("keydown", wake);
+    return () => {
+      window.removeEventListener("keydown", wake);
+      window.clearTimeout(idleTimer.current);
+    };
+  }, [fullscreen, wake]);
+  useEffect(() => {
+    const node = controlsRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setControlsHeight(node.offsetHeight));
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
+
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
       void document.exitFullscreen().catch(() => undefined);
@@ -223,13 +260,21 @@ export function Player({
           ? "danger"
           : "neutral";
 
+  const controlsHidden = fullscreen && idle && playing && !overControls;
+  const captionLift =
+    fullscreen && !controlsHidden && controlsHeight > 0
+      ? { bottom: `max(11%, ${controlsHeight + 16}px)` }
+      : undefined;
+
   return (
     <div className="grid min-w-0 gap-4">
       <div
         ref={frameRef}
+        onPointerMove={fullscreen ? wake : undefined}
+        onPointerDown={fullscreen ? wake : undefined}
         className={
           fullscreen
-            ? "flex h-full w-full flex-col bg-stage"
+            ? `relative flex h-full w-full flex-col bg-stage ${controlsHidden ? "cursor-none" : ""}`
             : bare
               ? "bg-surface"
               : "overflow-hidden rounded-2xl border border-line bg-surface"
@@ -279,7 +324,7 @@ export function Player({
           />
 
           {show && overlay && (
-            <div className="pointer-events-none absolute inset-x-[7%] bottom-[11%] text-center">
+            <div className="pointer-events-none absolute inset-x-[7%] bottom-[11%] text-center transition-[bottom] duration-300" style={captionLift}>
               <span
                 lang={lang}
                 className={`inline-block max-w-[85%] rounded-md bg-scrim-strong px-3.5 py-2 leading-snug text-white backdrop-blur-sm [text-wrap:balance] ${fullscreen ? CAPTION_CLASS_FULLSCREEN[size] : CAPTION_CLASS[size]}`}
@@ -290,7 +335,7 @@ export function Player({
           )}
 
           {show && stateNote && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-[11%] text-center">
+            <div className="pointer-events-none absolute inset-x-0 bottom-[11%] text-center transition-[bottom] duration-300" style={captionLift}>
               <span
                 role="status"
                 className="inline-flex items-center gap-2 rounded-md bg-scrim-strong px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
@@ -302,6 +347,23 @@ export function Player({
           )}
         </div>
 
+        <div
+          ref={controlsRef}
+          inert={controlsHidden}
+          onPointerEnter={() => setOverControls(true)}
+          onPointerLeave={() => setOverControls(false)}
+          onFocus={() => setOverControls(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOverControls(false);
+          }}
+          className={
+            fullscreen
+              ? `absolute inset-x-0 bottom-0 z-10 transition-[opacity,transform] duration-300 ${
+                  controlsHidden ? "pointer-events-none translate-y-2 opacity-0" : "opacity-100"
+                }`
+              : ""
+          }
+        >
         <div className="relative bg-surface px-0 pb-0 pt-0">
           <input
             type="range"
@@ -503,6 +565,7 @@ export function Player({
             {error}
           </p>
         )}
+        </div>
       </div>
     </div>
   );
