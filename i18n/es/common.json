@@ -90,7 +90,7 @@
   "error.forbidden": "No tienes permiso para esta acción.",
   "error.notFound": "No se encontró el recurso.",
   "error.conflict": "Ya existe un registro con esos datos.",
-  "error.tooLarge": "El vídeo es demasiado largo: el almacenamiento admite unos 25 minutos como máximo.",
+  "error.tooLarge": "El archivo es demasiado grande: el máximo es 2 GB.",
   "error.invalid": "Los datos enviados no son válidos.",
   "error.tooMany": "Demasiados intentos. Espera un momento.",
   "error.server": "El servidor falló. Inténtalo de nuevo.",
