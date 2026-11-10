@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Capturas de verificacion visual (generadas por tools/screenshots.py)
 data/screenshots/
+
+# Capturas de revisión en móvil (no son parte del producto)
+data/screenshots-mobile/

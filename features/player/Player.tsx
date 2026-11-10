@@ -505,7 +505,7 @@ export function Player({
             onScrubChange={setScrubbing}
           />
 
-          <div className="mt-1.5 flex items-center gap-1">
+          <div className="mt-1.5 flex items-center gap-0.5 sm:gap-1">
             <ControlButton label={playing ? t("player.pause") : t("player.play")} shortcut="K" onClick={togglePlay}>
               <AnimatePresence initial={false} mode="popLayout">
                 <motion.span
@@ -527,22 +527,26 @@ export function Player({
               <Icon name="skipForward" className="h-5 w-5" />
             </ControlButton>
 
-            <VolumeControl
-              volume={volume}
-              muted={muted}
-              onVolume={(value) => {
-                setVolume(value);
-                if (value > 0) setMuted(false);
-              }}
-              onMute={() => setMuted((value) => !value)}
-            />
+            {/* Volumen: en el móvil lo controlan los botones del teléfono y
+                ocupa el sitio que necesitan pantalla completa y PiP. */}
+            <div className="hidden sm:flex">
+              <VolumeControl
+                volume={volume}
+                muted={muted}
+                onVolume={(value) => {
+                  setVolume(value);
+                  if (value > 0) setMuted(false);
+                }}
+                onMute={() => setMuted((value) => !value)}
+              />
+            </div>
 
-            <p className="ml-1.5 whitespace-nowrap font-mono text-xs tabular-nums sm:text-[0.8125rem]">
+            <p className="ml-1 shrink-0 whitespace-nowrap font-mono text-xs tabular-nums sm:ml-1.5 sm:text-[0.8125rem]">
               <span className="text-white">{formatClock(timeMs)}</span>
-              <span className="text-white/50"> / {formatClock(durationMs)}</span>
+              <span className="hidden text-white/50 sm:inline"> / {formatClock(durationMs)}</span>
             </p>
 
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
               <Tooltip label={liveLabel}>
                 <button
                   type="button"
@@ -558,13 +562,17 @@ export function Player({
                 </button>
               </Tooltip>
 
-              <SpeedMenu
-                rate={rate}
-                open={menu === "speed"}
-                onToggle={() => toggleMenu("speed")}
-                onClose={closeMenu}
-                onChange={setRate}
-              />
+              {/* La velocidad pasa al móvil sin hueco: con ella, la fila se
+                  quedaba sin sitio y la pantalla completa se salía. */}
+              <div className="hidden sm:flex">
+                <SpeedMenu
+                  rate={rate}
+                  open={menu === "speed"}
+                  onToggle={() => toggleMenu("speed")}
+                  onClose={closeMenu}
+                  onChange={setRate}
+                />
+              </div>
 
               <ControlButton
                 label={show ? t("player.captionsOff") : t("player.captionsOn")}
@@ -594,7 +602,7 @@ export function Player({
               />
 
               {pipSupported && (
-                <ControlButton label={t("player.pip")} onClick={togglePip} className="hidden sm:grid">
+                <ControlButton label={t("player.pip")} onClick={togglePip}>
                   <Icon name="pip" className="h-5 w-5" />
                 </ControlButton>
               )}
